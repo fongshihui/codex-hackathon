@@ -6,11 +6,18 @@ node_modules/
 .env.*
 !.env.example
 config.local.js
+config.*.local.js
+
+# Supabase local CLI state
+supabase/.temp/
 
 # Build and generated output
 dist/
 build/
 coverage/
+.cache/
+.parcel-cache/
+.vite/
 
 # Logs
 *.log
@@ -21,3 +28,8 @@ pnpm-debug.log*
 
 # OS files
 .DS_Store
+
+# Editor files
+.idea/
+.vscode/
+*.swp

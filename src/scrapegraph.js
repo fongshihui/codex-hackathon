@@ -1,3 +1,5 @@
+import { readCache, writeCache } from "./cache.js";
+
 export async function extractLinkedInProfile({ url }) {
   return extractWithScrapeGraph({
     url,
@@ -10,8 +12,9 @@ export async function extractLinkedInProfile({ url }) {
 }
 
 export async function extractJobPosting({ url }) {
+  const normalizedUrl = normalizeJobPostingUrl(url);
   return extractWithScrapeGraph({
-    url,
+    url: normalizedUrl,
     prompt:
       "Extract public job posting information for resume tailoring and interview prep. Return title, company, location, employment type, seniority, summary, responsibilities, requirements, preferred qualifications, technologies, interview topics, compensation, and application notes. Only include information visible on the public page.",
     schema: jobPostingSchema(),
@@ -29,12 +32,20 @@ async function extractWithScrapeGraph({ url, prompt, schema, formatter, failureM
   }
 
   const endpoint = process.env.SGAI_EXTRACT_URL || "https://v2-api.scrapegraphai.com/api/extract";
+  const cacheKey = `${endpoint}:${url}:${prompt}`;
+  const cached = await readExtractionCache(cacheKey);
+  if (cached) return cached;
+
+  const timeoutMs = Number(process.env.SGAI_TIMEOUT_MS || 35_000);
+  const wait = Number(process.env.SGAI_WAIT_MS || 1_000);
+  const scrolls = Number(process.env.SGAI_SCROLLS || 1);
   const response = await fetch(endpoint, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "SGAI-APIKEY": apiKey,
     },
+    signal: AbortSignal.timeout(timeoutMs),
     body: JSON.stringify({
       url,
       prompt,
@@ -42,8 +53,8 @@ async function extractWithScrapeGraph({ url, prompt, schema, formatter, failureM
       fetchConfig: {
         mode: "js",
         stealth: true,
-        wait: 3000,
-        scrolls: 3,
+        wait,
+        scrolls,
       },
     }),
   });
@@ -56,10 +67,21 @@ async function extractWithScrapeGraph({ url, prompt, schema, formatter, failureM
   }
 
   const extracted = payload.json || payload.result || payload.data?.json_data || payload.data || payload;
-  return {
+  const result = {
     raw: extracted,
     text: formatter(extracted),
   };
+  await writeExtractionCache(cacheKey, result);
+  return result;
+}
+
+function readExtractionCache(key) {
+  return readCache("scrapegraph", key);
+}
+
+function writeExtractionCache(key, value) {
+  const ttlMs = Number(process.env.SGAI_CACHE_TTL_MS || 15 * 60_000);
+  return writeCache("scrapegraph", key, value, ttlMs);
 }
 
 export function isLinkedInProfileUrl(value) {
@@ -77,12 +99,28 @@ export function isSupportedJobPostingUrl(value) {
     const parsed = new URL(value);
     const hostname = parsed.hostname.toLowerCase();
     if (hostname === "linkedin.com" || hostname.endsWith(".linkedin.com")) {
-      return parsed.pathname.startsWith("/jobs/") || parsed.pathname.startsWith("/job/");
+      return (
+        parsed.pathname.startsWith("/jobs/") ||
+        parsed.pathname.startsWith("/job/") ||
+        Boolean(parsed.searchParams.get("currentJobId"))
+      );
     }
     return /^https?:\/\/[^\s]+$/i.test(value);
   } catch {
     return false;
   }
+}
+
+function normalizeJobPostingUrl(value) {
+  const parsed = new URL(value);
+  const hostname = parsed.hostname.toLowerCase();
+  const jobId = parsed.searchParams.get("currentJobId");
+
+  if ((hostname === "linkedin.com" || hostname.endsWith(".linkedin.com")) && jobId) {
+    return `https://www.linkedin.com/jobs/view/${encodeURIComponent(jobId)}/`;
+  }
+
+  return parsed.href;
 }
 
 function linkedInProfileSchema() {

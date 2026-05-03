@@ -4,10 +4,13 @@ import cors from "cors";
 import express from "express";
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
+import multer from "multer";
 import pinoHttp from "pino-http";
 import { z } from "zod";
 import { requireSupabaseAuth } from "./src/auth.js";
 import { generateAiCandidate } from "./src/gemini.js";
+import { extractGithubProjects, isGithubUrl } from "./src/github.js";
+import { extractResumeText } from "./src/resume-parser.js";
 import {
   extractJobPosting,
   extractLinkedInProfile,
@@ -33,7 +36,16 @@ if (!supabaseUrl) {
 const app = express();
 
 app.set("trust proxy", isProduction ? 1 : false);
-app.use(pinoHttp({ level: process.env.LOG_LEVEL || "info" }));
+app.use(
+  pinoHttp({
+    level: process.env.LOG_LEVEL || "info",
+    customLogLevel(_req, res, error) {
+      if (error || res.statusCode >= 500) return "error";
+      if (res.statusCode >= 400) return "warn";
+      return process.env.HTTP_ACCESS_LOGS === "true" ? "info" : "silent";
+    },
+  }),
+);
 app.use(compression());
 app.use(
   helmet({
@@ -44,7 +56,6 @@ app.use(
         "connect-src": [
           "'self'",
           supabaseUrl,
-          "https://api.github.com",
           "https://*.ingest.sentry.io",
           "https://*.ingest.us.sentry.io",
         ],
@@ -71,6 +82,13 @@ const apiLimiter = rateLimit({
   limit: Number(process.env.API_RATE_LIMIT_PER_MINUTE || 60),
   standardHeaders: true,
   legacyHeaders: false,
+});
+const resumeUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: Number(process.env.RESUME_UPLOAD_LIMIT_BYTES || 8 * 1024 * 1024),
+    files: 1,
+  },
 });
 
 const textField = z.string().trim().max(20_000).optional().default("");
@@ -110,12 +128,37 @@ const jobExtractSchema = z.object({
   url: urlField.refine(isSupportedJobPostingUrl, "Enter a valid public job posting URL."),
 });
 
+const githubExtractSchema = z.object({
+  url: urlField.refine(isGithubUrl, "Enter a public GitHub profile or repository URL."),
+});
+
 app.get("/healthz", (_req, res) => {
   res.status(200).json({
     ok: true,
     environment: process.env.NODE_ENV || "development",
     sentry: sentryEnabled,
   });
+});
+
+app.get("/config.local.js", (_req, res) => {
+  res.type("application/javascript");
+  res.setHeader("Cache-Control", "no-store");
+  res.send(
+    `window.SUPABASE_CONFIG = ${JSON.stringify({
+      url: process.env.SUPABASE_URL || "",
+      publishableKey: process.env.SUPABASE_PUBLISHABLE_KEY || "",
+    })};
+window.APP_CONFIG = ${JSON.stringify({
+      apiBaseUrl: process.env.BROWSER_API_BASE_URL || "",
+    })};
+window.SENTRY_CONFIG = ${JSON.stringify({
+      browserDsn: process.env.SENTRY_BROWSER_DSN || "",
+      environment: process.env.SENTRY_ENVIRONMENT || process.env.NODE_ENV || "development",
+      release: process.env.SENTRY_RELEASE || "",
+      tracesSampleRate: Number(process.env.SENTRY_TRACES_SAMPLE_RATE || 0),
+    })};
+`,
+  );
 });
 
 app.post("/api/generate", apiLimiter, requireSupabaseAuth({ supabaseUrl }), async (req, res, next) => {
@@ -135,6 +178,21 @@ app.post("/api/generate", apiLimiter, requireSupabaseAuth({ supabaseUrl }), asyn
   }
 });
 
+app.post(
+  "/api/resume/extract",
+  apiLimiter,
+  requireSupabaseAuth({ supabaseUrl }),
+  resumeUpload.single("resume"),
+  async (req, res, next) => {
+    try {
+      const result = await extractResumeText(req.file);
+      return res.status(200).json(result);
+    } catch (error) {
+      return next(error);
+    }
+  },
+);
+
 app.post("/api/linkedin/extract", apiLimiter, requireSupabaseAuth({ supabaseUrl }), async (req, res, next) => {
   try {
     const parsed = linkedInExtractSchema.safeParse(req.body);
@@ -146,6 +204,23 @@ app.post("/api/linkedin/extract", apiLimiter, requireSupabaseAuth({ supabaseUrl 
     }
 
     const result = await extractLinkedInProfile(parsed.data);
+    return res.status(200).json(result);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+app.post("/api/github/extract", apiLimiter, requireSupabaseAuth({ supabaseUrl }), async (req, res, next) => {
+  try {
+    const parsed = githubExtractSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({
+        error: "Invalid GitHub extraction request.",
+        details: parsed.error.issues.map((issue) => issue.message),
+      });
+    }
+
+    const result = await extractGithubProjects(parsed.data);
     return res.status(200).json(result);
   } catch (error) {
     return next(error);
@@ -184,7 +259,9 @@ Sentry.setupExpressErrorHandler(app);
 app.use((err, req, res, _next) => {
   req.log?.error({ err }, "Unhandled request error");
   const status = Number(err.status || 500);
-  res.status(status).json({ error: status >= 500 ? err.message || "Internal server error." : err.message });
+  const message =
+    status >= 500 && isProduction ? "Internal server error." : err.message || "Internal server error.";
+  res.status(status).json({ error: message });
 });
 
 app.listen(port, host, () => {

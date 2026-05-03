@@ -1,0 +1,51 @@
+services:
+  - type: web
+    name: interview-prep-studio
+    runtime: node
+    plan: free
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: HOST
+        value: 0.0.0.0
+      - key: HTTP_ACCESS_LOGS
+        value: "false"
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash
+      - key: SGAI_TIMEOUT_MS
+        value: "35000"
+      - key: SGAI_WAIT_MS
+        value: "1000"
+      - key: SGAI_SCROLLS
+        value: "1"
+      - key: SGAI_CACHE_TTL_MS
+        value: "900000"
+      - key: GEMINI_INPUT_MAX_CHARS
+        value: "8000"
+      - key: GITHUB_TIMEOUT_MS
+        value: "12000"
+      - key: GITHUB_CACHE_TTL_MS
+        value: "900000"
+      - key: REDIS_TIMEOUT_MS
+        value: "600"
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: SGAI_API_KEY
+        sync: false
+      - key: ALLOWED_ORIGINS
+        sync: false
+      - key: PUBLIC_ORIGIN
+        sync: false
+      - key: GITHUB_TOKEN
+        sync: false
+      - key: SENTRY_DSN
+        sync: false
+      - key: SENTRY_BROWSER_DSN
+        sync: false
