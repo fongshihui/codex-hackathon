@@ -14,6 +14,7 @@ let prepMemory = [];
 let applications = [];
 let questionBank = [];
 let behavioralStories = [];
+let dsaPracticeQuestions = [];
 let editingApplicationId = null;
 let isAppStateHydrating = false;
 let appStateSaveTimer = null;
@@ -78,6 +79,12 @@ const resumeChangeList = document.querySelector("#resumeChangeList");
 const lcList = document.querySelector("#lcList");
 const systemList = document.querySelector("#systemList");
 const prepMemoryList = document.querySelector("#prepMemoryList");
+const dsaLanguageSelect = document.querySelector("#dsaLanguageSelect");
+const dsaTopicSelect = document.querySelector("#dsaTopicSelect");
+const dsaDifficultySelect = document.querySelector("#dsaDifficultySelect");
+const generateDsaButton = document.querySelector("#generateDsaButton");
+const saveDsaQuestionsButton = document.querySelector("#saveDsaQuestionsButton");
+const dsaPracticeList = document.querySelector("#dsaPracticeList");
 const saveGeneratedQuestionsButton = document.querySelector("#saveGeneratedQuestionsButton");
 const manualQuestionInput = document.querySelector("#manualQuestionInput");
 const manualQuestionType = document.querySelector("#manualQuestionType");
@@ -117,6 +124,127 @@ const maxPrepMemoryItems = 12;
 const maxQuestionBankItems = 80;
 const maxBehavioralStories = 12;
 const appStateTable = "app_state";
+const dsaQuestionBank = {
+  arrays: {
+    easy: [
+      ["Rotate Window Sum", "Given an array and window size k, return every contiguous window sum."],
+      ["Merge Sorted Sensor Readings", "Merge two sorted arrays of timestamps without using extra sorting."],
+      ["First Bad Prefix", "Return the first index where prefix sum exceeds a threshold."],
+    ],
+    medium: [
+      ["Minimum Subarray to Remove", "Remove the shortest subarray so the remaining sum is divisible by k."],
+      ["Product Except Self With Nulls", "Return product except self while handling zero values explicitly."],
+      ["Container Capacity Audit", "Find two boundaries that maximize retained capacity."],
+    ],
+    hard: [
+      ["Median of Two Streams", "Find the median after combining two sorted arrays in logarithmic time."],
+      ["Trapping Rain Across Regions", "Compute total trapped water from an elevation array."],
+      ["Shortest Unsorted Repair Window", "Find the minimal window that makes the array sorted after fixing it."],
+    ],
+  },
+  strings: {
+    easy: [
+      ["Normalize Candidate Handle", "Validate whether two profile handles normalize to the same canonical form."],
+      ["Valid Anagram Signals", "Check whether two strings contain the same characters."],
+      ["Compress Repeated Events", "Run-length encode repeated event labels."],
+    ],
+    medium: [
+      ["Longest Unique Session", "Find the longest substring without repeated characters."],
+      ["Grouped Skill Anagrams", "Group skill strings that are anagrams after normalization."],
+      ["Minimum Replacement Window", "Find the shortest substring that contains all required characters."],
+    ],
+    hard: [
+      ["Wildcard Route Matcher", "Match a path string against ? and * wildcards."],
+      ["Edit Distance Review", "Compute minimum edits to transform one string into another."],
+      ["Concatenated Token Search", "Find all indexes where a concatenation of given words appears."],
+    ],
+  },
+  hashmaps: {
+    easy: [
+      ["Two Sum Follow-Up", "Return indexes of two values that add to a target."],
+      ["Duplicate Application IDs", "Detect whether any application ID appears twice."],
+      ["Most Common Skill", "Return the most frequent skill from a list."],
+    ],
+    medium: [
+      ["Top K Frequent Signals", "Return the k most frequent values from an event stream."],
+      ["LRU Cache Simulator", "Implement get and put for a fixed-capacity LRU cache."],
+      ["Subarray Sum Equals K", "Count contiguous subarrays that sum to k."],
+    ],
+    hard: [
+      ["All O One Counter", "Design a counter with O(1) inc, dec, min, and max."],
+      ["Minimum Window Coverage", "Find the minimum text window containing all target tokens."],
+      ["Longest Consecutive Range", "Find the longest consecutive integer sequence in O(n)."],
+    ],
+  },
+  trees: {
+    easy: [
+      ["Same Tree Review", "Check whether two binary trees are structurally identical."],
+      ["Max Tree Depth", "Compute maximum depth of a binary tree."],
+      ["Invert Tree", "Mirror a binary tree."],
+    ],
+    medium: [
+      ["Level Order Interview", "Return tree nodes level by level."],
+      ["Validate BST", "Check whether a binary tree is a valid search tree."],
+      ["Lowest Common Manager", "Find lowest common ancestor of two nodes."],
+    ],
+    hard: [
+      ["Serialize Org Tree", "Serialize and deserialize a binary tree."],
+      ["Binary Tree Maximum Path", "Find the maximum path sum between any two nodes."],
+      ["Recover Corrupted BST", "Fix a BST where two nodes were swapped."],
+    ],
+  },
+  graphs: {
+    easy: [
+      ["Find Connected Teams", "Count connected components in an undirected graph."],
+      ["Valid Path Check", "Determine whether a path exists between two nodes."],
+      ["Graph Degree Summary", "Return the degree of every node."],
+    ],
+    medium: [
+      ["Number of Islands", "Count connected land regions in a grid."],
+      ["Course Schedule", "Detect whether all courses can be completed."],
+      ["Shortest Path in Grid", "Find shortest path length with BFS."],
+    ],
+    hard: [
+      ["Alien Dictionary", "Infer character order from sorted words."],
+      ["Network Delay Time", "Compute when all nodes receive a signal."],
+      ["Minimum Cost to Connect", "Build an MST over weighted edges."],
+    ],
+  },
+  dp: {
+    easy: [
+      ["Climbing Stairs", "Count ways to climb n steps."],
+      ["House Robber Lite", "Maximize non-adjacent values."],
+      ["Maximum Subarray", "Find the maximum sum contiguous subarray."],
+    ],
+    medium: [
+      ["Coin Change", "Return the fewest coins needed for a target amount."],
+      ["Longest Increasing Subsequence", "Find the length of the longest increasing subsequence."],
+      ["Unique Paths With Blocks", "Count grid paths while avoiding blocked cells."],
+    ],
+    hard: [
+      ["Edit Distance", "Compute minimum insert, delete, and replace operations."],
+      ["Burst Balloons", "Maximize score from removing values in the best order."],
+      ["Regular Expression DP", "Match strings with . and * operators."],
+    ],
+  },
+  heaps: {
+    easy: [
+      ["Kth Largest Stream", "Maintain the kth largest value after each insertion."],
+      ["Last Stone Weight", "Repeatedly smash the two largest values."],
+      ["Smallest Meeting Room", "Find the earliest available room by end time."],
+    ],
+    medium: [
+      ["Merge K Sorted Lists", "Merge k sorted linked lists efficiently."],
+      ["Task Scheduler", "Schedule tasks with cooldown constraints."],
+      ["K Closest Points", "Return the k closest points to the origin."],
+    ],
+    hard: [
+      ["Median Finder", "Support add number and median query from a stream."],
+      ["IPO Capital Planner", "Choose projects to maximize capital."],
+      ["Smallest Range From Lists", "Find the smallest range covering k sorted lists."],
+    ],
+  },
+};
 const keywordStopWords = new Set([
   "about",
   "above",
@@ -359,26 +487,26 @@ function renderAiOutput(payload) {
 
   lastAiOutput = {
     fitScore: Number.isFinite(score) ? Math.max(0, Math.min(100, Math.round(score))) : 0,
-    fitSummary: cleanString(payload.fitSummary),
-    strengths: cleanStringArray(payload.strengths),
-    gaps: cleanStringArray(payload.gaps),
-    actions: cleanStringArray(payload.actions),
-    resumeChangeSuggestions: cleanStringArray(payload.resumeChangeSuggestions),
-    leetcodeQuestions: cleanStringArray(payload.leetcodeQuestions),
-    systemDesignPrompts: cleanStringArray(payload.systemDesignPrompts),
-    candidateBrief: cleanString(payload.candidateBrief),
-    tailoredResume: cleanString(payload.tailoredResume),
+    fitSummary: cleanGeneratedText(payload.fitSummary),
+    strengths: cleanGeneratedArray(payload.strengths),
+    gaps: cleanGeneratedArray(payload.gaps),
+    actions: cleanGeneratedArray(payload.actions),
+    resumeChangeSuggestions: cleanGeneratedArray(payload.resumeChangeSuggestions),
+    leetcodeQuestions: cleanGeneratedArray(payload.leetcodeQuestions),
+    systemDesignPrompts: cleanGeneratedArray(payload.systemDesignPrompts),
+    candidateBrief: cleanGeneratedText(payload.candidateBrief),
+    tailoredResume: cleanGeneratedText(payload.tailoredResume),
   };
 
-  fitSummary.textContent = cleanString(payload.fitSummary) || "AI generated the output below.";
-  renderList(strengthList, cleanStringArray(payload.strengths), "No strengths returned by AI.");
-  renderList(gapList, cleanStringArray(payload.gaps), "No gaps returned by AI.");
-  renderList(actionList, cleanStringArray(payload.actions), "No actions returned by AI.");
-  renderResumeChangeList(cleanStringArray(payload.resumeChangeSuggestions));
-  renderLeetcodeList(lcList, cleanStringArray(payload.leetcodeQuestions), "No LeetCode plan returned by AI.");
-  renderPracticeList(systemList, cleanStringArray(payload.systemDesignPrompts), "System design prompts will appear after generation.");
-  briefOutput.value = cleanString(payload.candidateBrief);
-  tailoredResumeOutput.value = cleanString(payload.tailoredResume);
+  renderFormattedText(fitSummary, lastAiOutput.fitSummary || "No summary returned.");
+  renderList(strengthList, lastAiOutput.strengths, "No strengths yet.");
+  renderList(gapList, lastAiOutput.gaps, "No gaps yet.");
+  renderList(actionList, lastAiOutput.actions, "No actions yet.");
+  renderResumeChangeList(lastAiOutput.resumeChangeSuggestions);
+  renderLeetcodeList(lcList, lastAiOutput.leetcodeQuestions, "No coding drills yet.");
+  renderPracticeList(systemList, lastAiOutput.systemDesignPrompts, "No system drills yet.");
+  briefOutput.value = lastAiOutput.candidateBrief;
+  tailoredResumeOutput.value = lastAiOutput.tailoredResume;
   updateReadiness();
   renderKeywordCoverage();
 }
@@ -402,13 +530,13 @@ function clearGeneratedOutput() {
 function resetAiOutputDisplay() {
   lastAiOutput = {};
   setScore(0);
-  fitSummary.textContent = "Generate with AI to see the candidate fit summary.";
-  renderList(strengthList, [], "No strengths generated yet.");
-  renderList(gapList, [], "No gaps generated yet.");
-  renderList(actionList, [], "Actions will be generated from the resume and notes.");
+  fitSummary.textContent = "Generate to score the role fit.";
+  renderList(strengthList, [], "No strengths yet.");
+  renderList(gapList, [], "No gaps yet.");
+  renderList(actionList, [], "No actions yet.");
   renderResumeChangeList([]);
-  renderLeetcodeList(lcList, [], "Generate to see drills.");
-  renderPracticeList(systemList, [], "Generate to see prompts.");
+  renderLeetcodeList(lcList, [], "No coding drills yet.");
+  renderPracticeList(systemList, [], "No system drills yet.");
   briefOutput.value = "";
   tailoredResumeOutput.value = "";
   updateReadiness();
@@ -436,7 +564,7 @@ function renderList(target, items, fallback) {
   const output = items.length ? items : [fallback];
   for (const item of output) {
     const li = document.createElement("li");
-    li.textContent = item;
+    renderFormattedText(li, item);
     target.append(li);
   }
 }
@@ -499,7 +627,7 @@ function renderPracticeList(target, items, fallback) {
   }
 }
 
-function renderResumeChangeList(items, fallback = "Resume changes will appear after generation.") {
+function renderResumeChangeList(items, fallback = "No edits yet.") {
   if (!resumeChangeList) return;
   resumeChangeList.classList.toggle("change-list", items.length > 0);
   resumeChangeList.classList.toggle("empty-list", items.length === 0);
@@ -514,7 +642,7 @@ function renderResumeChangeList(items, fallback = "Resume changes will appear af
       const label = document.createElement("strong");
       label.textContent = parsed.section;
       const detail = document.createElement("span");
-      detail.textContent = parsed.detail;
+      renderFormattedText(detail, parsed.detail);
       li.append(label, detail);
     }
     resumeChangeList.append(li);
@@ -531,6 +659,54 @@ function cleanStringArray(items) {
     : [];
 }
 
+function cleanGeneratedText(value) {
+  return cleanString(value)
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/^#{1,6}\s*/gm, "")
+    .replace(/^\s*[-*]\s+/gm, "")
+    .replace(/^\s*\d+[.)]\s+/gm, "")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function cleanGeneratedArray(items) {
+  return cleanStringArray(items).map(cleanGeneratedText).filter(Boolean);
+}
+
+function renderFormattedText(target, value) {
+  target.textContent = "";
+  const text = cleanString(value);
+  const labelMatch = text.match(/^([^:]{2,38}):\s+(.+)$/);
+  if (labelMatch) {
+    const strong = document.createElement("strong");
+    strong.textContent = labelMatch[1].trim();
+    const span = document.createElement("span");
+    appendInlineFormatted(span, labelMatch[2].trim());
+    target.append(strong, document.createTextNode(": "), span);
+    return;
+  }
+  appendInlineFormatted(target, text);
+}
+
+function appendInlineFormatted(target, value) {
+  const text = cleanString(value);
+  const pattern = /(\*\*([^*]+)\*\*|__([^_]+)__)/g;
+  let cursor = 0;
+  for (const match of text.matchAll(pattern)) {
+    if (match.index > cursor) {
+      target.append(document.createTextNode(text.slice(cursor, match.index)));
+    }
+    const strong = document.createElement("strong");
+    strong.textContent = match[2] || match[3] || "";
+    target.append(strong);
+    cursor = match.index + match[0].length;
+  }
+  if (cursor < text.length) {
+    target.append(document.createTextNode(text.slice(cursor)));
+  }
+}
+
 function buildDemoAiOutput(context) {
   const title = inferJobTitle(context);
   const company = inferCompany(context);
@@ -538,7 +714,7 @@ function buildDemoAiOutput(context) {
   const language = inferPrepLanguage(context);
   return {
     fitScore: context.jobText ? 82 : 68,
-    fitSummary: `Sample review for ${target}. The candidate shows strong React, Node.js, SQL, and analytics evidence. Add more role-specific metrics and architecture details before using this as a final draft.`,
+    fitSummary: `${target}: strong React, Node.js, SQL, and analytics fit. Add sharper architecture proof and role-specific metrics.`,
     strengths: [
       "Backend and product analytics work map well to full-stack SaaS roles.",
       "Resume includes measurable impact, including dashboard latency improvement.",
@@ -573,8 +749,10 @@ function buildDemoAiOutput(context) {
       "Rate-limited public API - Per-customer quotas and observability",
       "Delayed job notifications - Retry and failure reporting",
     ],
-    candidateBrief: `Candidate brief for ${target}\n\nMaya Chen is a full-stack engineer with strong Node.js, React, SQL, and analytics-product experience. Her strongest proof points are event ingestion ownership, dashboard latency reduction, and cross-functional delivery with product and support teams.\n\nInterview emphasis: API design, SQL data modeling, dashboard performance, debugging, and product tradeoffs.`,
-    tailoredResume: `Rewrite snippets\n\nSummary: Full-stack engineer focused on SaaS analytics workflows, Node.js services, React interfaces, and SQL-backed reporting.\n\nBullet: Reduced dashboard latency by 38% through query tuning and API response improvements.\n\nBullet: Owned analytics, billing event, and admin reporting services for enterprise customer workflows.`,
+    candidateBrief: `Maya Chen fits ${target} through Node.js, React, SQL, and analytics-product work. Lead with dashboard latency wins, event ingestion ownership, and cross-functional delivery. Prep API design, SQL modeling, debugging, and product tradeoffs.`,
+    tailoredResume: `Summary: Full-stack engineer focused on SaaS analytics, Node.js services, React, and SQL reporting.
+Bullet: Reduced dashboard latency by 38% through query tuning and API response improvements.
+Bullet: Owned analytics, billing event, and admin reporting services for enterprise workflows.`,
   };
 }
 
@@ -682,7 +860,7 @@ function renderPrepMemory() {
 
   if (!memory.length) {
     const empty = document.createElement("p");
-    empty.textContent = "Generated prep from previous jobs will appear here.";
+    empty.textContent = "No saved prep yet.";
     prepMemoryList.append(empty);
     return;
   }
@@ -1030,6 +1208,214 @@ function saveGeneratedQuestions() {
   showToast("Generated questions saved.");
 }
 
+function generateDsaPracticeRound() {
+  const language = dsaLanguageSelect.value;
+  const topic = dsaTopicSelect.value;
+  const difficulty = dsaDifficultySelect.value;
+  const bank = dsaQuestionBank[topic]?.[difficulty] || dsaQuestionBank.arrays.medium;
+  dsaPracticeQuestions = bank.map(([title, prompt], index) =>
+    buildDsaPracticeQuestion({
+      title,
+      prompt,
+      language,
+      topic,
+      difficulty,
+      index,
+    }),
+  );
+  renderDsaPractice();
+  queueSaveAppState(0);
+  showToast(`${language} DSA round generated.`);
+}
+
+function buildDsaPracticeQuestion({ title, prompt, language, topic, difficulty, index }) {
+  return {
+    id: `dsa-${Date.now()}-${index}`,
+    type: "coding",
+    language,
+    topic,
+    difficulty,
+    title,
+    question: `${title} - ${topicLabel(topic)} - ${difficultyLabel(difficulty)} - Language: ${language}`,
+    prompt,
+    starter: starterCodeFor(language, title),
+    hints: hintsFor(topic, difficulty),
+    complexity: complexityFor(topic),
+  };
+}
+
+function renderDsaPractice() {
+  if (!dsaPracticeList) return;
+  dsaPracticeList.innerHTML = "";
+  if (!dsaPracticeQuestions.length) {
+    const empty = document.createElement("p");
+    empty.className = "empty-copy";
+    empty.textContent = "Choose a language and generate a DSA round.";
+    dsaPracticeList.append(empty);
+    return;
+  }
+
+  for (const item of dsaPracticeQuestions) {
+    const card = document.createElement("article");
+    card.className = "dsa-card";
+    const header = document.createElement("div");
+    header.className = "dsa-card-header";
+    const title = document.createElement("h4");
+    title.textContent = item.title;
+    const meta = document.createElement("span");
+    meta.textContent = `${item.language} / ${topicLabel(item.topic)} / ${difficultyLabel(item.difficulty)}`;
+    header.append(title, meta);
+
+    const prompt = document.createElement("p");
+    prompt.textContent = item.prompt;
+    const hints = document.createElement("ul");
+    hints.className = "dsa-hints";
+    for (const hint of item.hints) {
+      const li = document.createElement("li");
+      li.textContent = hint;
+      hints.append(li);
+    }
+    const code = document.createElement("pre");
+    const codeInner = document.createElement("code");
+    codeInner.textContent = item.starter;
+    code.append(codeInner);
+    const complexity = document.createElement("small");
+    complexity.textContent = `Target complexity: ${item.complexity}`;
+    card.append(header, prompt, hints, code, complexity);
+    dsaPracticeList.append(card);
+  }
+}
+
+function saveDsaQuestions() {
+  if (!dsaPracticeQuestions.length) {
+    showToast("Generate a DSA round first.");
+    return;
+  }
+  addQuestionsToBank(
+    dsaPracticeQuestions.map((item) => ({
+      type: "coding",
+      question: item.question,
+    })),
+    getContext(),
+  );
+  showToast("Language-specific DSA questions saved.");
+}
+
+function topicLabel(topic) {
+  const labels = {
+    arrays: "Arrays",
+    strings: "Strings",
+    hashmaps: "Hash maps",
+    trees: "Trees",
+    graphs: "Graphs",
+    dp: "Dynamic programming",
+    heaps: "Heaps",
+  };
+  return labels[topic] || topic;
+}
+
+function difficultyLabel(difficulty) {
+  return difficulty.charAt(0).toUpperCase() + difficulty.slice(1);
+}
+
+function hintsFor(topic, difficulty) {
+  const base = {
+    arrays: ["Define the invariant before coding.", "Watch index bounds and empty input."],
+    strings: ["Normalize input first.", "Use two pointers or frequency counts where possible."],
+    hashmaps: ["Choose the key carefully.", "Update counts before checking edge cases."],
+    trees: ["State traversal order clearly.", "Handle null children before recursion."],
+    graphs: ["Clarify directed vs undirected.", "Track visited state explicitly."],
+    dp: ["Define state and transition before code.", "Start with base cases."],
+    heaps: ["State min-heap vs max-heap choice.", "Keep heap size bounded when possible."],
+  }[topic] || ["Explain approach before coding.", "Call out edge cases."];
+  return difficulty === "hard" ? [...base, "Discuss the brute force approach and why it fails."] : base;
+}
+
+function complexityFor(topic) {
+  const targets = {
+    arrays: "O(n) or O(n log n), O(1) to O(n) space",
+    strings: "O(n), O(k) space for character/token counts",
+    hashmaps: "O(n) average time, O(n) space",
+    trees: "O(n) time, O(h) recursion space",
+    graphs: "O(V + E) time, O(V) space",
+    dp: "O(states * transitions), optimized space if possible",
+    heaps: "O(n log k) or O(n log n), depending on heap size",
+  };
+  return targets[topic] || "State time and space before coding";
+}
+
+function starterCodeFor(language, title) {
+  const functionName = slugify(title).replace(/-([a-z])/g, (_match, letter) => letter.toUpperCase()) || "solve";
+  const snippets = {
+    "C++": `#include <bits/stdc++.h>
+using namespace std;
+
+class Solution {
+public:
+    // Explain your approach before writing code.
+    vector<int> ${functionName}(vector<int>& nums) {
+        // TODO: implement
+        return {};
+    }
+};`,
+    Python: `from typing import List
+
+class Solution:
+    def ${functionName}(self, nums: List[int]) -> List[int]:
+        # Explain your approach before writing code.
+        # TODO: implement
+        return []`,
+    JavaScript: `function ${functionName}(nums) {
+  // Explain your approach before writing code.
+  // TODO: implement
+  return [];
+}`,
+    TypeScript: `function ${functionName}(nums: number[]): number[] {
+  // Explain your approach before writing code.
+  // TODO: implement
+  return [];
+}`,
+    Java: `import java.util.*;
+
+class Solution {
+    public int[] ${functionName}(int[] nums) {
+        // Explain your approach before writing code.
+        // TODO: implement
+        return new int[0];
+    }
+}`,
+    Go: `package main
+
+func ${functionName}(nums []int) []int {
+    // Explain your approach before writing code.
+    // TODO: implement
+    return []int{}
+}`,
+  };
+  return snippets[language] || snippets.JavaScript;
+}
+
+function sanitizeDsaPractice(items) {
+  return Array.isArray(items)
+    ? items
+        .filter((item) => item && item.id && item.question)
+        .map((item) => ({
+          id: cleanString(item.id),
+          type: "coding",
+          language: cleanString(item.language) || "C++",
+          topic: cleanString(item.topic) || "arrays",
+          difficulty: cleanString(item.difficulty) || "medium",
+          title: cleanString(item.title),
+          question: cleanString(item.question),
+          prompt: cleanString(item.prompt),
+          starter: cleanString(item.starter),
+          hints: cleanStringArray(item.hints),
+          complexity: cleanString(item.complexity),
+        }))
+        .slice(0, 6)
+    : [];
+}
+
 function addManualQuestion() {
   const question = cleanString(manualQuestionInput.value);
   if (!question) {
@@ -1076,7 +1462,7 @@ function renderQuestionBank() {
   if (!questionBank.length) {
     const empty = document.createElement("p");
     empty.className = "empty-copy";
-    empty.textContent = "No questions saved yet. Save generated drills or add your own.";
+    empty.textContent = "No saved questions yet.";
     questionBankList.append(empty);
     return;
   }
@@ -1156,7 +1542,7 @@ function renderBehavioralStories() {
   if (!behavioralStories.length) {
     const empty = document.createElement("p");
     empty.className = "empty-copy";
-    empty.textContent = "No STAR stories yet. Build from resume evidence after adding context.";
+    empty.textContent = "No stories yet.";
     storyList.append(empty);
     return;
   }
@@ -1262,6 +1648,7 @@ function getAppStatePayload() {
       applications,
       questionBank,
       behavioralStories,
+      dsaPracticeQuestions,
     },
     ai_output: lastAiOutput || {},
     prep_memory: prepMemory,
@@ -1301,9 +1688,11 @@ function applySavedAppState(state = {}) {
   applications = sanitizeApplications(context.applications);
   questionBank = sanitizeQuestionBank(context.questionBank);
   behavioralStories = sanitizeBehavioralStories(context.behavioralStories);
+  dsaPracticeQuestions = sanitizeDsaPractice(context.dsaPracticeQuestions);
   renderApplications();
   renderQuestionBank();
   renderBehavioralStories();
+  renderDsaPractice();
 
   prepMemory = Array.isArray(state.prep_memory)
     ? state.prep_memory.filter((item) => item && item.id).slice(0, maxPrepMemoryItems)
@@ -1326,10 +1715,12 @@ async function loadAppState() {
     applications = [];
     questionBank = [];
     behavioralStories = [];
+    dsaPracticeQuestions = [];
     renderPrepMemory();
     renderApplications();
     renderQuestionBank();
     renderBehavioralStories();
+    renderDsaPractice();
     resetAiOutputDisplay();
     updateCounts();
     setSaveStatus("Demo only");
@@ -1352,10 +1743,12 @@ async function loadAppState() {
       applications = [];
       questionBank = [];
       behavioralStories = [];
+      dsaPracticeQuestions = [];
       renderPrepMemory();
       renderApplications();
       renderQuestionBank();
       renderBehavioralStories();
+      renderDsaPractice();
       isAppStateHydrating = false;
       queueSaveAppState(0);
     }
@@ -1424,6 +1817,7 @@ async function clearSavedData() {
   applications = [];
   questionBank = [];
   behavioralStories = [];
+  dsaPracticeQuestions = [];
   editingApplicationId = null;
   localStorage.removeItem(prepMemoryKey());
   resetAiOutputDisplay();
@@ -1431,6 +1825,7 @@ async function clearSavedData() {
   renderApplications();
   renderQuestionBank();
   renderBehavioralStories();
+  renderDsaPractice();
   resetApplicationForm();
   updateCounts();
   setSaveStatus("Cleared");
@@ -2004,6 +2399,9 @@ function buildPrepPackMarkdown() {
     "## Coding Drills",
     ...markdownList(lastAiOutput.leetcodeQuestions),
     "",
+    "## Language DSA Round",
+    ...markdownList(dsaPracticeQuestions.map((item) => `${item.question} - ${item.prompt}`)),
+    "",
     "## System Design Drills",
     ...markdownList(lastAiOutput.systemDesignPrompts),
     "",
@@ -2070,11 +2468,13 @@ signOutButton.addEventListener("click", async () => {
     applications = [];
     questionBank = [];
     behavioralStories = [];
+    dsaPracticeQuestions = [];
     renderAuthState(null);
     resetAiOutputDisplay();
     renderApplications();
     renderQuestionBank();
     renderBehavioralStories();
+    renderDsaPractice();
     resetApplicationForm();
     showToast("Exited sample workspace.");
     return;
@@ -2162,6 +2562,8 @@ copyTailoredButton.addEventListener("click", async () => {
 });
 copyPackButton.addEventListener("click", copyPrepPack);
 downloadPackButton.addEventListener("click", downloadPrepPack);
+generateDsaButton.addEventListener("click", generateDsaPracticeRound);
+saveDsaQuestionsButton.addEventListener("click", saveDsaQuestions);
 saveGeneratedQuestionsButton.addEventListener("click", saveGeneratedQuestions);
 addQuestionButton.addEventListener("click", addManualQuestion);
 manualQuestionInput.addEventListener("keydown", (event) => {
@@ -2179,5 +2581,6 @@ renderPrepMemory();
 renderApplications();
 renderQuestionBank();
 renderBehavioralStories();
+renderDsaPractice();
 initializeSentry();
 initializeAuth();

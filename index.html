@@ -328,8 +328,8 @@
         <section class="page" id="analysis" data-page="analysis" aria-live="polite">
           <div class="page-header">
             <div>
-              <h3>Review the fit</h3>
-              <p>Scan the fit and gaps.</p>
+              <h3>Fit</h3>
+              <p>Score, strengths, gaps, next moves.</p>
             </div>
             <a class="secondary-button page-next" href="#draft">
               Drafts
@@ -339,13 +339,13 @@
 
           <div class="analysis-grid">
             <article class="result-card score-card">
-              <p class="section-label">Fit Signal</p>
+              <p class="section-label">Score</p>
               <div class="score-row">
                 <strong id="fitScore">0</strong>
                 <span>/100</span>
               </div>
               <div class="meter" aria-hidden="true"><span id="fitMeter"></span></div>
-              <p id="fitSummary">The analysis will appear after you add input.</p>
+              <p id="fitSummary">Generate to score the fit.</p>
             </article>
 
             <article class="result-card">
@@ -354,7 +354,7 @@
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 13 4 4L19 7" /></svg>
             </div>
             <ul id="strengthList" class="result-list empty-list">
-              <li>No strengths generated yet.</li>
+              <li>No strengths yet.</li>
             </ul>
             </article>
 
@@ -364,13 +364,13 @@
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 17h.01M10.3 4h3.4L21 18.5 19.3 21H4.7L3 18.5z" /></svg>
             </div>
             <ul id="gapList" class="result-list empty-list">
-              <li>No gaps generated yet.</li>
+              <li>No gaps yet.</li>
             </ul>
             </article>
 
             <article class="result-card action-card">
             <div class="card-title">
-              <h3>Next Actions</h3>
+              <h3>Actions</h3>
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01" /></svg>
             </div>
             <ol id="actionList" class="result-list empty-list">
@@ -380,7 +380,7 @@
 
             <article class="result-card keyword-card">
             <div class="card-title">
-              <h3>Role Keyword Coverage</h3>
+              <h3>Keywords</h3>
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 16 0 8 8 0 0 0-16 0M12 8v4l3 2" /></svg>
             </div>
             <div class="keyword-score">
@@ -404,8 +404,8 @@
         <section class="page" id="draft" data-page="draft">
           <div class="page-header">
             <div>
-              <h3>Resume edits</h3>
-              <p>Apply these to the existing resume.</p>
+              <h3>Edits</h3>
+              <p>Copy the strongest snippets.</p>
             </div>
             <a class="secondary-button page-next" href="#prep">
               Practice
@@ -417,19 +417,19 @@
             <article class="draft-panel change-panel">
               <div class="panel-heading">
                 <div>
-                  <p class="section-label">Recommended edits</p>
+                  <p class="section-label">Resume</p>
                   <h3>Change list</h3>
                 </div>
               </div>
               <ul id="resumeChangeList" class="result-list empty-list">
-                <li>Resume changes will appear after generation.</li>
+                <li>No edits yet.</li>
               </ul>
             </article>
 
             <article class="draft-panel">
               <div class="panel-heading">
                 <div>
-                  <p class="section-label">Positioning</p>
+                  <p class="section-label">Brief</p>
                   <h3>Brief</h3>
                 </div>
                 <button class="secondary-button" id="copyButton" type="button">
@@ -437,13 +437,13 @@
                   Copy
                 </button>
               </div>
-              <textarea id="briefOutput" spellcheck="true" placeholder="Your generated brief will appear here."></textarea>
+              <textarea id="briefOutput" spellcheck="true" placeholder="Brief appears here."></textarea>
             </article>
 
             <article class="draft-panel tailored-panel">
               <div class="panel-heading">
                 <div>
-                  <p class="section-label">Copy-ready snippets</p>
+                  <p class="section-label">Snippets</p>
                   <h3>Rewrite snippets</h3>
                 </div>
                 <button class="secondary-button" id="copyTailoredButton" type="button">
@@ -451,13 +451,13 @@
                   Copy
                 </button>
               </div>
-              <textarea id="tailoredResumeOutput" spellcheck="true" placeholder="Copy-ready summary or bullet snippets will appear here."></textarea>
+              <textarea id="tailoredResumeOutput" spellcheck="true" placeholder="Snippets appear here."></textarea>
             </article>
 
             <article class="draft-panel export-panel">
               <div class="panel-heading">
                 <div>
-                  <p class="section-label">Handoff</p>
+                  <p class="section-label">Export</p>
                   <h3>Prep pack</h3>
                 </div>
                 <div class="button-row">
@@ -471,7 +471,7 @@
                   </button>
                 </div>
               </div>
-              <p class="export-copy">Export the fit summary, action list, resume snippets, coding drills, and system prompts into one interview prep note.</p>
+              <p class="export-copy">Copy everything into one prep note.</p>
             </article>
           </div>
         </section>
@@ -479,8 +479,8 @@
         <section class="page" id="prep" data-page="prep" aria-live="polite">
           <div class="page-header">
             <div>
-              <h3>Practice plan</h3>
-              <p>Save questions, mark practice, and build stories.</p>
+              <h3>Prep</h3>
+              <p>Coding, systems, stories.</p>
             </div>
             <a class="secondary-button page-next" href="#applications">
               Applications
@@ -497,6 +497,56 @@
             <ul id="lcList" class="result-list empty-list">
               <li>Generate to see drills.</li>
             </ul>
+            </article>
+
+            <article class="prep-panel dsa-builder-panel">
+              <div class="panel-heading">
+                <div>
+                  <p class="section-label">DSA</p>
+                  <h3>Language drills</h3>
+                </div>
+                <button class="secondary-button" id="saveDsaQuestionsButton" type="button">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+                  Save
+                </button>
+              </div>
+              <div class="dsa-controls">
+                <label>
+                  Language
+                  <select id="dsaLanguageSelect">
+                    <option value="C++">C++</option>
+                    <option value="Python">Python</option>
+                    <option value="JavaScript">JavaScript</option>
+                    <option value="TypeScript">TypeScript</option>
+                    <option value="Java">Java</option>
+                    <option value="Go">Go</option>
+                  </select>
+                </label>
+                <label>
+                  Topic
+                  <select id="dsaTopicSelect">
+                    <option value="arrays">Arrays</option>
+                    <option value="strings">Strings</option>
+                    <option value="hashmaps">Hash maps</option>
+                    <option value="trees">Trees</option>
+                    <option value="graphs">Graphs</option>
+                    <option value="dp">Dynamic programming</option>
+                    <option value="heaps">Heaps</option>
+                  </select>
+                </label>
+                <label>
+                  Difficulty
+                  <select id="dsaDifficultySelect">
+                    <option value="medium">Medium</option>
+                    <option value="easy">Easy</option>
+                    <option value="hard">Hard</option>
+                  </select>
+                </label>
+                <button class="primary-button" id="generateDsaButton" type="button">Generate</button>
+              </div>
+              <div class="dsa-practice-list" id="dsaPracticeList">
+                <p class="empty-copy">Choose a language and generate a DSA round.</p>
+              </div>
             </article>
 
             <article class="prep-panel">
@@ -522,7 +572,7 @@
             <article class="prep-panel question-bank-panel">
               <div class="panel-heading">
                 <div>
-                  <p class="section-label">Question bank</p>
+                  <p class="section-label">Questions</p>
                   <h3>Company practice</h3>
                 </div>
                 <button class="secondary-button" id="saveGeneratedQuestionsButton" type="button">
@@ -546,7 +596,7 @@
             <article class="prep-panel story-builder-panel">
               <div class="panel-heading">
                 <div>
-                  <p class="section-label">Behavioral stories</p>
+                  <p class="section-label">Stories</p>
                   <h3>STAR builder</h3>
                 </div>
                 <button class="secondary-button" id="buildStoriesButton" type="button">

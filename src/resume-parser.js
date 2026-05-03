@@ -1,6 +1,4 @@
-import { PDFParse } from "pdf-parse";
-import mammoth from "mammoth";
-import WordExtractor from "word-extractor";
+import { Worker } from "node:worker_threads";
 
 const textExtensions = new Set(["txt", "md", "csv", "rtf"]);
 const maxExtractedLength = 20_000;
@@ -16,15 +14,15 @@ export async function extractResumeText(file) {
   const mimeType = String(file.mimetype || "").toLowerCase();
   let text = "";
 
-  if (extension === "pdf" || mimeType === "application/pdf") {
-    text = await extractPdf(file.buffer);
-  } else if (
+  if (
+    extension === "pdf" ||
+    mimeType === "application/pdf" ||
     extension === "docx" ||
-    mimeType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    mimeType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+    extension === "doc" ||
+    mimeType === "application/msword"
   ) {
-    text = await extractDocx(file.buffer);
-  } else if (extension === "doc" || mimeType === "application/msword") {
-    text = await extractDoc(file.buffer);
+    text = await extractDocumentInWorker({ buffer: file.buffer, extension, mimeType });
   } else if (textExtensions.has(extension) || mimeType.startsWith("text/")) {
     text = file.buffer.toString("utf8");
   } else {
@@ -52,25 +50,44 @@ function fileExtension(filename = "") {
   return String(filename).split(".").pop()?.toLowerCase() || "";
 }
 
-async function extractPdf(buffer) {
-  const parser = new PDFParse({ data: buffer });
-  try {
-    const result = await parser.getText();
-    return result.text || result.pages?.map((page) => page.text).join("\n\n") || "";
-  } finally {
-    await parser.destroy();
-  }
-}
+function extractDocumentInWorker({ buffer, extension, mimeType }) {
+  return new Promise((resolve, reject) => {
+    const worker = new Worker(new URL("./resume-worker.js", import.meta.url), {
+      workerData: {
+        buffer,
+        extension,
+        mimeType,
+      },
+    });
+    const timeoutMs = Number(process.env.RESUME_WORKER_TIMEOUT_MS || 30_000);
+    const timer = setTimeout(() => {
+      worker.terminate();
+      const error = new Error("Resume extraction timed out.");
+      error.status = 504;
+      reject(error);
+    }, timeoutMs);
 
-async function extractDocx(buffer) {
-  const result = await mammoth.extractRawText({ buffer });
-  return result.value || "";
-}
-
-async function extractDoc(buffer) {
-  const extractor = new WordExtractor();
-  const document = await extractor.extract(buffer);
-  return document.getBody() || "";
+    worker.once("message", (message) => {
+      clearTimeout(timer);
+      if (message?.error) {
+        const error = new Error(message.error);
+        error.status = message.status || 500;
+        reject(error);
+        return;
+      }
+      resolve(message?.text || "");
+    });
+    worker.once("error", (error) => {
+      clearTimeout(timer);
+      reject(error);
+    });
+    worker.once("exit", (code) => {
+      clearTimeout(timer);
+      if (code !== 0) {
+        reject(new Error(`Resume extraction worker exited with code ${code}.`));
+      }
+    });
+  });
 }
 
 function cleanExtractedText(text) {

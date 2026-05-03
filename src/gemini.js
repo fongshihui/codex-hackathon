@@ -63,6 +63,12 @@ Content rules:
 - Use the resume and LinkedIn profile text as candidate evidence. The LinkedIn text may come from ScrapeGraphAI extraction, so treat it as public profile evidence rather than a source for unsupported claims.
 - Do not invent companies, degrees, metrics, titles, or claims not supported by the input.
 - If proof is missing, say what proof to add instead of fabricating it.
+- Use plain text only. Do not use Markdown, bold markers, headings, bullets inside strings, asterisks, or numbered prefixes.
+- Keep fitSummary under 28 words.
+- Keep candidateBrief under 90 words.
+- Keep tailoredResume to 6 short lines or fewer.
+- Keep every array item under 16 words unless the problem title requires more.
+- For strengths, gaps, actions, and resumeChangeSuggestions, prefer "Label: detail" phrasing so the UI can emphasize the label.
 - Infer the target coding language from the job description and notes first. If they explicitly mention a language such as Python, Java, JavaScript, TypeScript, C++, Go, Ruby, Swift, Kotlin, C#, PHP, Scala, or Rust, tailor coding prep to that language. If no target language is explicit, use the strongest language signal from the resume or GitHub text.
 - Generate 5 concise practice items using real LeetCode problem titles, not invented LeetCode-style titles. Format each as "Problem name - Topic - Difficulty - Language: X".
 - Generate 3 concise system design prompts based on the target role. If a target implementation language is explicit, include it where relevant. Format each as "System to design - Focus area".
@@ -135,7 +141,20 @@ function cleanScore(value) {
 }
 
 function cleanString(value) {
-  return typeof value === "string" ? value.trim() : "";
+  return typeof value === "string" ? stripMarkdown(value).trim() : "";
+}
+
+function stripMarkdown(value) {
+  return String(value || "")
+    .replace(/\*\*([^*]+)\*\*/g, "$1")
+    .replace(/__([^_]+)__/g, "$1")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/^#{1,6}\s*/gm, "")
+    .replace(/^\s*[-*]\s+/gm, "")
+    .replace(/^\s*\d+[.)]\s+/gm, "")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }
 
 function cleanArray(value) {

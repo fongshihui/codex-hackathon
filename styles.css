@@ -727,7 +727,8 @@ textarea:focus {
 }
 
 .question-bank-panel,
-.story-builder-panel {
+.story-builder-panel,
+.dsa-builder-panel {
   grid-column: span 1;
 }
 
@@ -801,8 +802,29 @@ textarea:focus {
   margin-bottom: 12px;
 }
 
+.dsa-builder-panel {
+  grid-column: 1 / -1;
+}
+
+.dsa-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  gap: 10px;
+  align-items: end;
+  margin-bottom: 14px;
+}
+
+.dsa-controls label {
+  display: grid;
+  gap: 7px;
+  color: var(--ink);
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
 .question-form input,
 .question-form select,
+.dsa-controls select,
 .application-form input,
 .application-form select {
   width: 100%;
@@ -818,6 +840,7 @@ textarea:focus {
 
 .question-form input:focus,
 .question-form select:focus,
+.dsa-controls select:focus,
 .application-form input:focus,
 .application-form select:focus {
   border-color: rgba(37, 111, 135, 0.75);
@@ -832,10 +855,65 @@ textarea:focus {
 }
 
 .question-bank-list,
+.dsa-practice-list,
 .story-list,
 .application-list {
   display: grid;
   gap: 12px;
+}
+
+.dsa-card {
+  display: grid;
+  gap: 11px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fbfcff;
+}
+
+.dsa-card-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: start;
+}
+
+.dsa-card h4 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.dsa-card-header span,
+.dsa-card small {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.dsa-card p {
+  margin: 0;
+  color: var(--ink);
+  line-height: 1.45;
+}
+
+.dsa-hints {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.dsa-card pre {
+  margin: 0;
+  max-height: 220px;
+  overflow: auto;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #151b2a;
+  color: #f7f9fd;
+  font-size: 0.82rem;
+  line-height: 1.45;
 }
 
 .question-row {
@@ -978,6 +1056,16 @@ textarea:focus {
   gap: 10px;
   color: var(--ink);
   line-height: 1.45;
+}
+
+.result-list strong,
+#fitSummary strong {
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.score-card #fitSummary strong {
+  color: #ffffff;
 }
 
 .empty-list {
@@ -1378,7 +1466,8 @@ textarea:focus {
     grid-template-columns: 1fr;
   }
 
-  .question-form {
+  .question-form,
+  .dsa-controls {
     grid-template-columns: 1fr;
   }
 
@@ -1395,7 +1484,8 @@ textarea:focus {
   .change-panel,
   .tailored-panel,
   .question-bank-panel,
-  .story-builder-panel {
+  .story-builder-panel,
+  .dsa-builder-panel {
     grid-column: auto;
   }
 

@@ -105,6 +105,7 @@ The app supports:
 - LeetCode-style practice question plan
 - System design prompt generation
 - Interview question bank for coding, system design, and behavioral questions with practiced tracking
+- Language-specific DSA practice generator with C++, Python, JavaScript, TypeScript, Java, and Go starter templates
 - Local STAR story builder that turns resume/generated evidence into Situation, Task, Action, Result prompts
 - Application tracker for company, role, URL, status, stage, priority, deadlines, date applied, follow-up date, recruiter, and notes
 - Editable candidate brief with copy support
