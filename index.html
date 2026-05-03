@@ -121,6 +121,18 @@
           <strong id="qualityScore">0%</strong>
           <span id="qualityText">Add a resume and notes to begin.</span>
         </div>
+
+        <div class="status-panel compact-status">
+          <p class="eyeline">Workspace</p>
+          <div class="status-line">
+            <span>Apps</span>
+            <strong id="sidebarApplicationCount">0</strong>
+          </div>
+          <div class="status-line">
+            <span>Questions</span>
+            <strong id="sidebarQuestionCount">0</strong>
+          </div>
+        </div>
       </aside>
 
       <section class="workspace">
@@ -160,6 +172,50 @@
             </a>
           </div>
 
+          <section class="command-center" aria-label="Workspace overview">
+            <article class="next-step-card">
+              <div>
+                <p class="section-label">Next best action</p>
+                <h3 id="nextActionTitle">Add resume source</h3>
+                <p id="nextActionDetail">Paste or import a current resume to start the prep workflow.</p>
+              </div>
+              <button class="primary-button" id="nextActionButton" type="button">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+                Start
+              </button>
+            </article>
+
+            <article class="overview-card">
+              <span class="overview-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M4 19V5M4 19h16M8 15l3-4 3 2 4-6" /></svg>
+              </span>
+              <div>
+                <p>Fit score</p>
+                <strong id="overviewFitScore">0%</strong>
+              </div>
+            </article>
+
+            <article class="overview-card">
+              <span class="overview-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M5 7h14M5 12h10M5 17h7" /></svg>
+              </span>
+              <div>
+                <p>Role signals</p>
+                <strong id="overviewKeywordScore">0%</strong>
+              </div>
+            </article>
+
+            <article class="overview-card">
+              <span class="overview-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" /></svg>
+              </span>
+              <div>
+                <p>Pipeline</p>
+                <strong id="overviewPipeline">0 roles</strong>
+              </div>
+            </article>
+          </section>
+
           <div class="flow-summary" aria-label="Workflow summary">
             <article>
               <span>1</span>
@@ -175,6 +231,11 @@
               <span>3</span>
               <strong>Generate output</strong>
               <p>Review edits and drills.</p>
+            </article>
+            <article>
+              <span>4</span>
+              <strong>Track follow-up</strong>
+              <p>Save roles and questions.</p>
             </article>
           </div>
 

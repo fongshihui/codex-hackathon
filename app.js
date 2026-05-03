@@ -56,6 +56,14 @@ const githubCount = document.querySelector("#githubCount");
 const jobCount = document.querySelector("#jobCount");
 const readinessScore = document.querySelector("#readinessScore");
 const readinessList = document.querySelector("#readinessList");
+const nextActionTitle = document.querySelector("#nextActionTitle");
+const nextActionDetail = document.querySelector("#nextActionDetail");
+const nextActionButton = document.querySelector("#nextActionButton");
+const overviewFitScore = document.querySelector("#overviewFitScore");
+const overviewKeywordScore = document.querySelector("#overviewKeywordScore");
+const overviewPipeline = document.querySelector("#overviewPipeline");
+const sidebarApplicationCount = document.querySelector("#sidebarApplicationCount");
+const sidebarQuestionCount = document.querySelector("#sidebarQuestionCount");
 const resumeFile = document.querySelector("#resumeFile");
 const notesFile = document.querySelector("#notesFile");
 const analyzeButton = document.querySelector("#analyzeButton");
@@ -179,6 +187,7 @@ const demoSession = {
   },
 };
 let autoSaveEnabled = localStorage.getItem(autoSavePreferenceKey) !== "false";
+let latestKeywordCoverage = { score: 0, matched: 0, total: 0 };
 
 const pageTitles = {
   resume: "Resume intake",
@@ -430,6 +439,7 @@ function setScore(score) {
   fitScore.textContent = score;
   fitMeter.style.width = `${score}%`;
   qualityScore.textContent = `${score}%`;
+  if (overviewFitScore) overviewFitScore.textContent = `${score}%`;
   if (score >= 75) {
     qualityText.textContent = "Strong AI-assessed match.";
   } else if (score >= 45) {
@@ -439,6 +449,7 @@ function setScore(score) {
   } else {
     qualityText.textContent = "Generate with AI to score the candidate.";
   }
+  updateWorkspaceOverview();
 }
 
 function renderList(target, items, fallback) {
@@ -935,6 +946,7 @@ function renderApplications() {
   if (!applicationList || !applicationCount) return;
   const sorted = [...applications].sort((a, b) => applicationSortScore(b) - applicationSortScore(a));
   applicationCount.textContent = `${applications.length} ${applications.length === 1 ? "role" : "roles"}`;
+  updateWorkspaceOverview();
   applicationList.innerHTML = "";
   if (!sorted.length) {
     const empty = document.createElement("p");
@@ -1240,6 +1252,7 @@ function renderDsaPractice() {
     card.append(header, prompt, hints, code, complexity);
     dsaPracticeList.append(card);
   }
+  updateWorkspaceOverview();
 }
 
 function updateDsaModeControls({ clear = true } = {}) {
@@ -1312,6 +1325,7 @@ function renderQuestionBank() {
   if (!questionBankList || !questionStats) return;
   const practiced = questionBank.filter((item) => item.practiced).length;
   questionStats.textContent = `${questionBank.length} saved questions / ${practiced} practiced`;
+  updateWorkspaceOverview();
   questionBankList.innerHTML = "";
   if (!questionBank.length) {
     const empty = document.createElement("p");
@@ -1415,6 +1429,7 @@ function renderBehavioralStories() {
     );
     storyList.append(card);
   }
+  updateWorkspaceOverview();
 }
 
 function storyLine(label, value) {
@@ -1727,6 +1742,7 @@ function updateCounts() {
   jobCount.textContent = `${wordCount(jobTextInput.value)} words`;
   updateReadiness();
   renderKeywordCoverage();
+  updateWorkspaceOverview();
 }
 
 function updateReadiness() {
@@ -1772,6 +1788,7 @@ function updateReadiness() {
     row.append(status, copy);
     readinessList.append(row);
   }
+  updateWorkspaceOverview({ completed, total: items.length });
 }
 
 function renderKeywordCoverage() {
@@ -1784,13 +1801,77 @@ function renderKeywordCoverage() {
   const matched = keywords.filter((keyword) => evidenceTokens.has(keyword));
   const missing = keywords.filter((keyword) => !evidenceTokens.has(keyword));
   const score = keywords.length ? Math.round((matched.length / keywords.length) * 100) : 0;
+  latestKeywordCoverage = { score, matched: matched.length, total: keywords.length };
 
   keywordScore.textContent = `${score}%`;
+  if (overviewKeywordScore) overviewKeywordScore.textContent = `${score}%`;
   keywordSummary.textContent = keywords.length
     ? `${matched.length} of ${keywords.length} role signals appear in candidate evidence.`
     : "Add role context to compare evidence.";
   renderKeywordChips(matchedKeywords, matched, "No matched signals yet.");
   renderKeywordChips(missingKeywords, missing, "No missing signals found.");
+  updateWorkspaceOverview();
+}
+
+function updateWorkspaceOverview(readiness = {}) {
+  if (overviewPipeline) {
+    overviewPipeline.textContent = `${applications.length} ${applications.length === 1 ? "role" : "roles"}`;
+  }
+  if (sidebarApplicationCount) sidebarApplicationCount.textContent = applications.length;
+  if (sidebarQuestionCount) sidebarQuestionCount.textContent = questionBank.length;
+  if (!nextActionTitle || !nextActionDetail || !nextActionButton) return;
+
+  const context = getContext();
+  const resumeWords = wordCount(context.resumeText);
+  const targetWords = wordCount(`${context.jobText} ${context.notesText}`);
+  const evidenceWords = wordCount(`${context.linkedinText} ${context.githubText}`);
+  const hasOutput = hasAiOutput(lastAiOutput);
+  const readyCount = Number.isFinite(readiness.completed)
+    ? readiness.completed
+    : [resumeWords >= 40, targetWords >= 25, evidenceWords >= 20, hasOutput].filter(Boolean).length;
+
+  let title = "Add resume source";
+  let detail = "Paste or import a current resume to start the prep workflow.";
+  let targetPage = "resume";
+  let button = "Start";
+
+  if (resumeWords >= 40 && targetWords < 25) {
+    title = "Add role context";
+    detail = "Paste job requirements or recruiter notes so the review can target the right signals.";
+    targetPage = "context";
+    button = "Add evidence";
+  } else if (resumeWords >= 40 && targetWords >= 25 && evidenceWords < 20) {
+    title = "Add proof sources";
+    detail = "LinkedIn or GitHub evidence makes strengths, gaps, and keywords more specific.";
+    targetPage = "context";
+    button = "Add proof";
+  } else if (resumeWords >= 40 && targetWords >= 25 && !hasOutput) {
+    title = "Generate review";
+    detail = `${readyCount}/4 inputs ready. Generate fit score, resume edits, and interview drills.`;
+    targetPage = "analysis";
+    button = "Generate";
+  } else if (hasOutput && applications.length === 0) {
+    title = "Save this role";
+    detail = "Add the current role to the pipeline with score, next action, and follow-up date.";
+    targetPage = "applications";
+    button = "Track role";
+  } else if (hasOutput && questionBank.length === 0) {
+    title = "Save practice questions";
+    detail = "Move generated coding, system, and behavioral prompts into the practice bank.";
+    targetPage = "prep";
+    button = "Practice";
+  } else {
+    title = "Prep pack ready";
+    detail = `${latestKeywordCoverage.matched}/${latestKeywordCoverage.total || 0} role signals matched. Review drafts or export the prep pack.`;
+    targetPage = "draft";
+    button = "Review drafts";
+  }
+
+  nextActionTitle.textContent = title;
+  nextActionDetail.textContent = detail;
+  nextActionButton.dataset.targetPage = targetPage;
+  nextActionButton.dataset.action = button === "Generate" ? "generate" : "navigate";
+  nextActionButton.lastChild.textContent = button;
 }
 
 function extractRoleKeywords(text) {
@@ -2363,6 +2444,14 @@ function loadSampleData({ silent = false } = {}) {
 
 sampleButton.addEventListener("click", () => {
   loadSampleData();
+});
+
+nextActionButton?.addEventListener("click", () => {
+  if (nextActionButton.dataset.action === "generate") {
+    analyze();
+    return;
+  }
+  setActivePage(nextActionButton.dataset.targetPage || "resume", true);
 });
 
 demoButton.addEventListener("click", startDemo);

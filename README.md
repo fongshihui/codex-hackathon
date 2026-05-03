@@ -2,6 +2,30 @@
 
 A protected browser app for turning pasted resume text and user notes into a concise candidate brief, interview prep plan, and tailored resume draft. Generated outputs come from the Gemini API through the Node backend.
 
+## System design
+
+```mermaid
+flowchart LR
+  User["Candidate in browser"] --> UI["Static single-page app\nindex.html, styles.css, app.js"]
+  UI --> Config["/config.local.js\npublic runtime config"]
+  UI --> Auth["Supabase Auth\nemail/password session"]
+  UI --> API["Express Node server\nHelmet, CORS, rate limits"]
+
+  Auth --> API
+  API --> Verify["Supabase JWT verification\nJWKS via jose"]
+  API --> Gemini["Gemini API\ncandidate review + practice generation"]
+  API --> Resume["Resume parser\nPDF/DOC/DOCX/text extraction"]
+  API --> GitHub["GitHub public API\nprofile/repo evidence"]
+  API --> Scrape["ScrapeGraphAI\nLinkedIn/job public page extraction"]
+  API --> Cache["Import cache\nRedis when configured\nmemory fallback"]
+  UI --> State["Supabase app_state table\nper-user saved workspace"]
+
+  API --> Sentry["Sentry\noptional server/browser errors"]
+  UI --> Sentry
+```
+
+The browser keeps the working session responsive and sends only protected API requests for live AI, imports, and resume parsing. The Node server validates request shape with Zod, verifies Supabase JWTs before protected actions, keeps secret API keys in `.env`, and returns normalized JSON for the UI. Supabase stores each user's saved workspace state with row-level security, while Redis is an optional cache for repeated public imports.
+
 ## Gemini AI setup
 
 1. Open Google AI Studio.
