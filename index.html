@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Interview Prep Studio</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <script src="./config.local.js"></script>
+
+    <section class="auth-shell" id="authGate" aria-labelledby="authTitle">
+      <div class="auth-panel">
+        <div class="brand auth-brand">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" role="img">
+              <path d="M5 4.8A2.8 2.8 0 0 1 7.8 2h8.4A2.8 2.8 0 0 1 19 4.8v14.4a2.8 2.8 0 0 1-2.8 2.8H7.8A2.8 2.8 0 0 1 5 19.2V4.8Z" />
+              <path d="M8.5 7h7M8.5 11h7M8.5 15h4" />
+            </svg>
+          </span>
+          <div>
+            <p class="section-label">Protected workspace</p>
+            <h1 id="authTitle">Interview Prep Studio</h1>
+          </div>
+        </div>
+
+        <form class="auth-form" id="authForm">
+          <label>
+            Email
+            <input id="authEmail" type="email" autocomplete="email" required placeholder="you@example.com" />
+          </label>
+          <label>
+            Password
+            <input id="authPassword" type="password" autocomplete="current-password" required minlength="6" placeholder="At least 6 characters" />
+          </label>
+          <div class="auth-actions">
+            <button class="primary-button" id="signInButton" type="submit">Sign in</button>
+            <button class="secondary-button" id="signUpButton" type="button">Create account</button>
+          </div>
+          <p class="auth-message" id="authMessage" role="status" aria-live="polite">Configure Supabase to enable sign in.</p>
+        </form>
+      </div>
+    </section>
+
+    <main class="app-shell is-hidden" id="appShell">
+      <aside class="sidebar" aria-label="Workspace navigation">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" role="img">
+              <path d="M5 4.8A2.8 2.8 0 0 1 7.8 2h8.4A2.8 2.8 0 0 1 19 4.8v14.4a2.8 2.8 0 0 1-2.8 2.8H7.8A2.8 2.8 0 0 1 5 19.2V4.8Z" />
+              <path d="M8.5 7h7M8.5 11h7M8.5 15h4" />
+            </svg>
+          </span>
+          <div>
+            <h1>Interview Prep Studio</h1>
+            <p>Turn notes and resumes into prep plans and tailored drafts.</p>
+          </div>
+        </div>
+
+        <nav class="nav-list" aria-label="App sections">
+          <a href="#inputs" class="nav-item is-active">
+            <span aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h16" /></svg>
+            </span>
+            Intake
+          </a>
+          <a href="#analysis" class="nav-item">
+            <span aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M4 19V5M4 19h16M8 15l3-4 3 2 4-6" /></svg>
+            </span>
+            Analysis
+          </a>
+          <a href="#draft" class="nav-item">
+            <span aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M7 4h7l3 3v13H7zM14 4v4h4M9.5 12h5M9.5 16h5" /></svg>
+            </span>
+            Draft
+          </a>
+          <a href="#prep" class="nav-item">
+            <span aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M12 4v16M6 8h12M8 12h8M10 16h4" /></svg>
+            </span>
+            Prep
+          </a>
+        </nav>
+
+        <div class="status-panel">
+          <p class="eyeline">Session Quality</p>
+          <strong id="qualityScore">0%</strong>
+          <span id="qualityText">Add a resume and notes to begin.</span>
+        </div>
+      </aside>
+
+      <section class="workspace">
+        <header class="topbar">
+          <div>
+            <p class="section-label">Candidate workspace</p>
+            <h2>Resume, notes, and interview prep</h2>
+          </div>
+          <div class="topbar-actions">
+            <span class="account-chip" id="accountEmail"></span>
+            <button class="icon-button" id="sampleButton" type="button" aria-label="Load sample">
+              <svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14" /></svg>
+            </button>
+            <button class="primary-button" id="analyzeButton" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+              Generate
+            </button>
+            <button class="secondary-button" id="signOutButton" type="button">Sign out</button>
+          </div>
+        </header>
+
+        <section class="input-grid" id="inputs">
+          <article class="input-panel">
+            <div class="panel-heading">
+              <div>
+                <h3>Resume</h3>
+                <p>Paste the resume or import a text file.</p>
+              </div>
+              <label class="file-control">
+                <input id="resumeFile" type="file" accept=".txt,.md,.csv,.rtf" />
+                <span>
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v10M8 8l4-4 4 4M5 20h14" /></svg>
+                  Import
+                </span>
+              </label>
+            </div>
+            <textarea id="resumeInput" spellcheck="true" placeholder="Paste resume text here..."></textarea>
+            <div class="field-meta">
+              <span id="resumeCount">0 words</span>
+              <button class="text-button" id="clearResume" type="button">Clear</button>
+            </div>
+          </article>
+
+          <article class="input-panel">
+            <div class="panel-heading">
+              <div>
+                <h3>Notes</h3>
+                <p>Add role requirements, target company, interview focus, or goals.</p>
+              </div>
+              <label class="file-control">
+                <input id="notesFile" type="file" accept=".txt,.md,.csv,.rtf" />
+                <span>
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v10M8 8l4-4 4 4M5 20h14" /></svg>
+                  Import
+                </span>
+              </label>
+            </div>
+            <textarea id="notesInput" spellcheck="true" placeholder="Paste notes, job description, or feedback here..."></textarea>
+            <div class="field-meta">
+              <span id="notesCount">0 words</span>
+              <button class="text-button" id="clearNotes" type="button">Clear</button>
+            </div>
+          </article>
+        </section>
+
+        <section class="context-grid" aria-label="Profile and job context">
+          <article class="input-panel">
+            <div class="panel-heading">
+              <div>
+                <h3>LinkedIn</h3>
+                <p>Add the profile link and paste About, Experience, or Skills text.</p>
+              </div>
+            </div>
+            <div class="url-row">
+              <input class="url-input" id="linkedinUrlInput" type="url" placeholder="https://www.linkedin.com/in/..." />
+              <button class="secondary-button" id="openLinkedinButton" type="button">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h10v10M7 17 17 7" /></svg>
+                Open
+              </button>
+            </div>
+            <textarea id="linkedinTextInput" spellcheck="true" placeholder="Paste LinkedIn profile text here..."></textarea>
+            <div class="field-meta">
+              <span id="linkedinCount">0 words</span>
+              <button class="text-button" id="clearLinkedin" type="button">Clear</button>
+            </div>
+          </article>
+
+          <article class="input-panel">
+            <div class="panel-heading">
+              <div>
+                <h3>Job</h3>
+                <p>Add the posting link and paste the full job description.</p>
+              </div>
+            </div>
+            <div class="url-row">
+              <input class="url-input" id="jobUrlInput" type="url" placeholder="https://company.com/careers/..." />
+              <button class="secondary-button" id="openJobButton" type="button">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h10v10M7 17 17 7" /></svg>
+                Open
+              </button>
+            </div>
+            <textarea id="jobTextInput" spellcheck="true" placeholder="Paste job description text here..."></textarea>
+            <div class="field-meta">
+              <span id="jobCount">0 words</span>
+              <button class="text-button" id="clearJob" type="button">Clear</button>
+            </div>
+          </article>
+        </section>
+
+        <section class="analysis-grid" id="analysis" aria-live="polite">
+          <article class="result-card score-card">
+            <p class="section-label">Fit Signal</p>
+            <div class="score-row">
+              <strong id="fitScore">0</strong>
+              <span>/100</span>
+            </div>
+            <div class="meter" aria-hidden="true"><span id="fitMeter"></span></div>
+            <p id="fitSummary">The analysis will appear after you add input.</p>
+          </article>
+
+          <article class="result-card">
+            <div class="card-title">
+              <h3>Strengths</h3>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 13 4 4L19 7" /></svg>
+            </div>
+            <ul id="strengthList" class="result-list empty-list">
+              <li>No strengths generated yet.</li>
+            </ul>
+          </article>
+
+          <article class="result-card">
+            <div class="card-title">
+              <h3>Gaps</h3>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 17h.01M10.3 4h3.4L21 18.5 19.3 21H4.7L3 18.5z" /></svg>
+            </div>
+            <ul id="gapList" class="result-list empty-list">
+              <li>No gaps generated yet.</li>
+            </ul>
+          </article>
+
+          <article class="result-card action-card">
+            <div class="card-title">
+              <h3>Next Actions</h3>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01" /></svg>
+            </div>
+            <ol id="actionList" class="result-list empty-list">
+              <li>Actions will be generated from the resume and notes.</li>
+            </ol>
+          </article>
+        </section>
+
+        <section class="draft-panel" id="draft">
+          <div class="panel-heading">
+            <div>
+              <p class="section-label">Editable output</p>
+              <h3>Candidate brief</h3>
+            </div>
+            <button class="secondary-button" id="copyButton" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8h11v11H8zM5 5h11v3M5 5v11h3" /></svg>
+              Copy
+            </button>
+          </div>
+          <textarea id="briefOutput" spellcheck="true" placeholder="Your generated brief will appear here."></textarea>
+        </section>
+
+        <section class="prep-grid" id="prep" aria-live="polite">
+          <article class="prep-panel">
+            <div class="card-title">
+              <h3>LeetCode Plan</h3>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 7h8M8 12h5M8 17h8M4 5v14M20 5v14" /></svg>
+            </div>
+            <ul id="lcList" class="result-list empty-list">
+              <li>Practice questions will be generated from the target role and resume.</li>
+            </ul>
+          </article>
+
+          <article class="prep-panel">
+            <div class="card-title">
+              <h3>System Design</h3>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5h12v5H6zM6 14h5v5H6zM13 14h5v5h-5zM11 10v4M13 10v4" /></svg>
+            </div>
+            <ul id="systemList" class="result-list empty-list">
+              <li>System design prompts will appear after generation.</li>
+            </ul>
+          </article>
+
+          <article class="draft-panel tailored-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="section-label">Role-aligned draft</p>
+                <h3>Tailored resume</h3>
+              </div>
+              <button class="secondary-button" id="copyTailoredButton" type="button">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8h11v11H8zM5 5h11v3M5 5v11h3" /></svg>
+                Copy
+              </button>
+            </div>
+            <textarea id="tailoredResumeOutput" spellcheck="true" placeholder="A tailored resume draft will appear here."></textarea>
+          </article>
+        </section>
+      </section>
+    </main>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
