@@ -87,6 +87,7 @@ const dsaDifficultyLabel = document.querySelector("#dsaDifficultyLabel");
 const dsaDifficultySelect = document.querySelector("#dsaDifficultySelect");
 const generateDsaButton = document.querySelector("#generateDsaButton");
 const saveDsaQuestionsButton = document.querySelector("#saveDsaQuestionsButton");
+const dsaStatus = document.querySelector("#dsaStatus");
 const dsaPracticeList = document.querySelector("#dsaPracticeList");
 const saveGeneratedQuestionsButton = document.querySelector("#saveGeneratedQuestionsButton");
 const manualQuestionInput = document.querySelector("#manualQuestionInput");
@@ -1096,11 +1097,20 @@ async function generateDsaPracticeRound() {
   const topic = mode === "internals" ? "language internals" : topicLabel(dsaTopicSelect.value);
   const difficulty = mode === "internals" ? "concept" : dsaDifficultySelect.value;
 
-  if (!requireLiveSession("generate Gemini practice questions")) return;
+  if (window.location.protocol === "file:") {
+    setDsaStatus("Open the app through http://127.0.0.1:8010 or the Render URL. Gemini generation does not run from file://.", true);
+    showToast("Start the Node server to use Gemini practice.");
+    return;
+  }
+  if (!requireLiveSession("generate Gemini practice questions")) {
+    setDsaStatus("Sign in first. Demo mode and file:// cannot call Gemini.", true);
+    return;
+  }
 
   generateDsaButton.disabled = true;
   generateDsaButton.dataset.label ||= generateDsaButton.textContent.trim();
   generateDsaButton.textContent = "Generating...";
+  setDsaStatus(`Generating ${language} ${mode === "internals" ? "internals" : "DSA"} questions with Gemini...`);
 
   try {
     const apiBaseUrl = getApiBaseUrl();
@@ -1125,14 +1135,22 @@ async function generateDsaPracticeRound() {
     dsaPracticeQuestions = sanitizeDsaPractice(payload.questions);
     renderDsaPractice();
     queueSaveAppState(0);
+    setDsaStatus(`${dsaPracticeQuestions.length} ${language} questions generated.`);
     showToast(`${language} practice generated with Gemini.`);
   } catch (error) {
     reportError(error, { feature: "practice-generation", mode, language, topic, difficulty });
+    setDsaStatus(error.message || "Practice generation failed.", true);
     showToast(error.message || "Practice generation failed.");
   } finally {
     generateDsaButton.disabled = false;
     generateDsaButton.textContent = generateDsaButton.dataset.label;
   }
+}
+
+function setDsaStatus(message, isError = false) {
+  if (!dsaStatus) return;
+  dsaStatus.textContent = message;
+  dsaStatus.classList.toggle("is-error", isError);
 }
 
 function normalizePracticeQuestion(item, index) {
@@ -2068,10 +2086,12 @@ function renderAuthState(session) {
   if (sentryClient) sentryClient.setTag("auth_state", isSignedIn ? "signed_in" : "signed_out");
 
   if (isSignedIn) {
+    setDsaStatus(session?.isDemo ? "Sign in to generate Gemini practice questions." : "Ready to generate Gemini practice questions.");
     if (!window.location.hash || window.location.hash === "#auth") window.location.hash = "#resume";
     setActivePage(getRequestedPage());
     loadAppState();
   } else {
+    setDsaStatus("Sign in and run the app from the Node server to generate with Gemini.");
     window.location.hash = "#auth";
   }
 }

@@ -814,6 +814,18 @@ textarea:focus {
   margin-bottom: 14px;
 }
 
+.dsa-status {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 750;
+  line-height: 1.4;
+}
+
+.dsa-status.is-error {
+  color: var(--warning);
+}
+
 .dsa-controls label {
   display: grid;
   gap: 7px;
