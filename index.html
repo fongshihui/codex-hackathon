@@ -58,25 +58,31 @@
         </div>
 
         <nav class="nav-list" aria-label="App sections">
-          <a href="#inputs" class="nav-item is-active">
+          <a href="#resume" class="nav-item is-active" data-page-link="resume">
             <span aria-hidden="true">
               <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h16" /></svg>
             </span>
-            Intake
+            Resume
           </a>
-          <a href="#analysis" class="nav-item">
+          <a href="#context" class="nav-item" data-page-link="context">
+            <span aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M5 7h14M5 12h10M5 17h7M17 15l2 2 3-4" /></svg>
+            </span>
+            Context
+          </a>
+          <a href="#analysis" class="nav-item" data-page-link="analysis">
             <span aria-hidden="true">
               <svg viewBox="0 0 24 24"><path d="M4 19V5M4 19h16M8 15l3-4 3 2 4-6" /></svg>
             </span>
-            Analysis
+            Fit
           </a>
-          <a href="#draft" class="nav-item">
+          <a href="#draft" class="nav-item" data-page-link="draft">
             <span aria-hidden="true">
               <svg viewBox="0 0 24 24"><path d="M7 4h7l3 3v13H7zM14 4v4h4M9.5 12h5M9.5 16h5" /></svg>
             </span>
-            Draft
+            Drafts
           </a>
-          <a href="#prep" class="nav-item">
+          <a href="#prep" class="nav-item" data-page-link="prep">
             <span aria-hidden="true">
               <svg viewBox="0 0 24 24"><path d="M12 4v16M6 8h12M8 12h8M10 16h4" /></svg>
             </span>
@@ -95,7 +101,7 @@
         <header class="topbar">
           <div>
             <p class="section-label">Candidate workspace</p>
-            <h2>Resume, notes, and interview prep</h2>
+            <h2 id="pageTitle">Resume intake</h2>
           </div>
           <div class="topbar-actions">
             <span class="account-chip" id="accountEmail"></span>
@@ -110,52 +116,77 @@
           </div>
         </header>
 
-        <section class="input-grid" id="inputs">
-          <article class="input-panel">
-            <div class="panel-heading">
-              <div>
-                <h3>Resume</h3>
-                <p>Paste the resume or import a text file.</p>
-              </div>
-              <label class="file-control">
-                <input id="resumeFile" type="file" accept=".txt,.md,.csv,.rtf" />
-                <span>
-                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v10M8 8l4-4 4 4M5 20h14" /></svg>
-                  Import
-                </span>
-              </label>
+        <section class="page is-active" id="resume" data-page="resume">
+          <div class="page-header">
+            <div>
+              <h3>Start with the two things you already have</h3>
+              <p>Keep the raw candidate material here, then move to context when you want to add profile, project, or role evidence.</p>
             </div>
-            <textarea id="resumeInput" spellcheck="true" placeholder="Paste resume text here..."></textarea>
-            <div class="field-meta">
-              <span id="resumeCount">0 words</span>
-              <button class="text-button" id="clearResume" type="button">Clear</button>
-            </div>
-          </article>
+            <a class="secondary-button page-next" href="#context">
+              Next
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+            </a>
+          </div>
 
-          <article class="input-panel">
-            <div class="panel-heading">
-              <div>
-                <h3>Notes</h3>
-                <p>Add role requirements, target company, interview focus, or goals.</p>
+          <div class="input-grid">
+            <article class="input-panel primary-input">
+              <div class="panel-heading">
+                <div>
+                  <h3>Resume</h3>
+                  <p>Paste the resume or import a text file.</p>
+                </div>
+                <label class="file-control">
+                  <input id="resumeFile" type="file" accept=".txt,.md,.csv,.rtf" />
+                  <span>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v10M8 8l4-4 4 4M5 20h14" /></svg>
+                    Import
+                  </span>
+                </label>
               </div>
-              <label class="file-control">
-                <input id="notesFile" type="file" accept=".txt,.md,.csv,.rtf" />
-                <span>
-                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v10M8 8l4-4 4 4M5 20h14" /></svg>
-                  Import
-                </span>
-              </label>
-            </div>
-            <textarea id="notesInput" spellcheck="true" placeholder="Paste notes, job description, or feedback here..."></textarea>
-            <div class="field-meta">
-              <span id="notesCount">0 words</span>
-              <button class="text-button" id="clearNotes" type="button">Clear</button>
-            </div>
-          </article>
+              <textarea id="resumeInput" spellcheck="true" placeholder="Paste resume text here..."></textarea>
+              <div class="field-meta">
+                <span id="resumeCount">0 words</span>
+                <button class="text-button" id="clearResume" type="button">Clear</button>
+              </div>
+            </article>
+
+            <article class="input-panel">
+              <div class="panel-heading">
+                <div>
+                  <h3>Notes</h3>
+                  <p>Add role requirements, target company, interview focus, or goals.</p>
+                </div>
+                <label class="file-control">
+                  <input id="notesFile" type="file" accept=".txt,.md,.csv,.rtf" />
+                  <span>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v10M8 8l4-4 4 4M5 20h14" /></svg>
+                    Import
+                  </span>
+                </label>
+              </div>
+              <textarea id="notesInput" spellcheck="true" placeholder="Paste notes, job description, or feedback here..."></textarea>
+              <div class="field-meta">
+                <span id="notesCount">0 words</span>
+                <button class="text-button" id="clearNotes" type="button">Clear</button>
+              </div>
+            </article>
+          </div>
         </section>
 
-        <section class="context-grid" aria-label="Profile and job context">
-          <article class="input-panel">
+        <section class="page" id="context" data-page="context">
+          <div class="page-header">
+            <div>
+              <h3>Add supporting context</h3>
+              <p>Use this page for evidence outside the resume: profile details, public projects, and the job description.</p>
+            </div>
+            <a class="secondary-button page-next" href="#analysis">
+              Review fit
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+            </a>
+          </div>
+
+          <div class="context-grid" aria-label="Profile and job context">
+            <article class="input-panel">
             <div class="panel-heading">
               <div>
                 <h3>LinkedIn</h3>
@@ -168,15 +199,40 @@
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h10v10M7 17 17 7" /></svg>
                 Open
               </button>
+              <button class="secondary-button" id="fetchLinkedinButton" type="button">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+                Import
+              </button>
             </div>
             <textarea id="linkedinTextInput" spellcheck="true" placeholder="Paste LinkedIn profile text here..."></textarea>
             <div class="field-meta">
               <span id="linkedinCount">0 words</span>
               <button class="text-button" id="clearLinkedin" type="button">Clear</button>
             </div>
-          </article>
+            </article>
 
-          <article class="input-panel">
+            <article class="input-panel">
+            <div class="panel-heading">
+              <div>
+                <h3>GitHub</h3>
+                <p>Add a public profile or repository URL to import project evidence.</p>
+              </div>
+            </div>
+            <div class="url-row">
+              <input class="url-input" id="githubUrlInput" type="url" placeholder="https://github.com/user or /user/repo" />
+              <button class="secondary-button" id="fetchGithubButton" type="button">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+                Import
+              </button>
+            </div>
+            <textarea id="githubTextInput" spellcheck="true" placeholder="Public GitHub project details will appear here, or paste project notes manually..."></textarea>
+            <div class="field-meta">
+              <span id="githubCount">0 words</span>
+              <button class="text-button" id="clearGithub" type="button">Clear</button>
+            </div>
+            </article>
+
+            <article class="input-panel wide-panel">
             <div class="panel-heading">
               <div>
                 <h3>Job</h3>
@@ -184,10 +240,14 @@
               </div>
             </div>
             <div class="url-row">
-              <input class="url-input" id="jobUrlInput" type="url" placeholder="https://company.com/careers/..." />
+              <input class="url-input" id="jobUrlInput" type="url" placeholder="https://www.linkedin.com/jobs/view/... or company careers URL" />
               <button class="secondary-button" id="openJobButton" type="button">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h10v10M7 17 17 7" /></svg>
                 Open
+              </button>
+              <button class="secondary-button" id="fetchJobButton" type="button">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+                Import
               </button>
             </div>
             <textarea id="jobTextInput" spellcheck="true" placeholder="Paste job description text here..."></textarea>
@@ -195,21 +255,34 @@
               <span id="jobCount">0 words</span>
               <button class="text-button" id="clearJob" type="button">Clear</button>
             </div>
-          </article>
+            </article>
+          </div>
         </section>
 
-        <section class="analysis-grid" id="analysis" aria-live="polite">
-          <article class="result-card score-card">
-            <p class="section-label">Fit Signal</p>
-            <div class="score-row">
-              <strong id="fitScore">0</strong>
-              <span>/100</span>
+        <section class="page" id="analysis" data-page="analysis" aria-live="polite">
+          <div class="page-header">
+            <div>
+              <h3>Fit analysis</h3>
+              <p>Generate once from the top bar, then use this page to decide what to improve first.</p>
             </div>
-            <div class="meter" aria-hidden="true"><span id="fitMeter"></span></div>
-            <p id="fitSummary">The analysis will appear after you add input.</p>
-          </article>
+            <a class="secondary-button page-next" href="#draft">
+              Drafts
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+            </a>
+          </div>
 
-          <article class="result-card">
+          <div class="analysis-grid">
+            <article class="result-card score-card">
+              <p class="section-label">Fit Signal</p>
+              <div class="score-row">
+                <strong id="fitScore">0</strong>
+                <span>/100</span>
+              </div>
+              <div class="meter" aria-hidden="true"><span id="fitMeter"></span></div>
+              <p id="fitSummary">The analysis will appear after you add input.</p>
+            </article>
+
+            <article class="result-card">
             <div class="card-title">
               <h3>Strengths</h3>
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 13 4 4L19 7" /></svg>
@@ -217,9 +290,9 @@
             <ul id="strengthList" class="result-list empty-list">
               <li>No strengths generated yet.</li>
             </ul>
-          </article>
+            </article>
 
-          <article class="result-card">
+            <article class="result-card">
             <div class="card-title">
               <h3>Gaps</h3>
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 17h.01M10.3 4h3.4L21 18.5 19.3 21H4.7L3 18.5z" /></svg>
@@ -227,9 +300,9 @@
             <ul id="gapList" class="result-list empty-list">
               <li>No gaps generated yet.</li>
             </ul>
-          </article>
+            </article>
 
-          <article class="result-card action-card">
+            <article class="result-card action-card">
             <div class="card-title">
               <h3>Next Actions</h3>
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01" /></svg>
@@ -237,25 +310,67 @@
             <ol id="actionList" class="result-list empty-list">
               <li>Actions will be generated from the resume and notes.</li>
             </ol>
-          </article>
-        </section>
-
-        <section class="draft-panel" id="draft">
-          <div class="panel-heading">
-            <div>
-              <p class="section-label">Editable output</p>
-              <h3>Candidate brief</h3>
-            </div>
-            <button class="secondary-button" id="copyButton" type="button">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8h11v11H8zM5 5h11v3M5 5v11h3" /></svg>
-              Copy
-            </button>
+            </article>
           </div>
-          <textarea id="briefOutput" spellcheck="true" placeholder="Your generated brief will appear here."></textarea>
         </section>
 
-        <section class="prep-grid" id="prep" aria-live="polite">
-          <article class="prep-panel">
+        <section class="page" id="draft" data-page="draft">
+          <div class="page-header">
+            <div>
+              <h3>Editable drafts</h3>
+              <p>Keep generated writing separate from the analysis so you can edit without scrolling past score cards.</p>
+            </div>
+            <a class="secondary-button page-next" href="#prep">
+              Practice
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+            </a>
+          </div>
+
+          <div class="draft-grid">
+            <article class="draft-panel">
+              <div class="panel-heading">
+                <div>
+                  <p class="section-label">Editable output</p>
+                  <h3>Candidate brief</h3>
+                </div>
+                <button class="secondary-button" id="copyButton" type="button">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8h11v11H8zM5 5h11v3M5 5v11h3" /></svg>
+                  Copy
+                </button>
+              </div>
+              <textarea id="briefOutput" spellcheck="true" placeholder="Your generated brief will appear here."></textarea>
+            </article>
+
+            <article class="draft-panel tailored-panel">
+              <div class="panel-heading">
+                <div>
+                  <p class="section-label">Role-aligned draft</p>
+                  <h3>Tailored resume</h3>
+                </div>
+                <button class="secondary-button" id="copyTailoredButton" type="button">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8h11v11H8zM5 5h11v3M5 5v11h3" /></svg>
+                  Copy
+                </button>
+              </div>
+              <textarea id="tailoredResumeOutput" spellcheck="true" placeholder="A tailored resume draft will appear here."></textarea>
+            </article>
+          </div>
+        </section>
+
+        <section class="page" id="prep" data-page="prep" aria-live="polite">
+          <div class="page-header">
+            <div>
+              <h3>Interview practice</h3>
+              <p>Use this page when you are ready to turn the generated analysis into concrete practice prompts.</p>
+            </div>
+            <a class="secondary-button page-next" href="#resume">
+              Intake
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 18l-6-6 6-6" /></svg>
+            </a>
+          </div>
+
+          <div class="prep-grid">
+            <article class="prep-panel">
             <div class="card-title">
               <h3>LeetCode Plan</h3>
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 7h8M8 12h5M8 17h8M4 5v14M20 5v14" /></svg>
@@ -263,9 +378,9 @@
             <ul id="lcList" class="result-list empty-list">
               <li>Practice questions will be generated from the target role and resume.</li>
             </ul>
-          </article>
+            </article>
 
-          <article class="prep-panel">
+            <article class="prep-panel">
             <div class="card-title">
               <h3>System Design</h3>
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5h12v5H6zM6 14h5v5H6zM13 14h5v5h-5zM11 10v4M13 10v4" /></svg>
@@ -273,21 +388,8 @@
             <ul id="systemList" class="result-list empty-list">
               <li>System design prompts will appear after generation.</li>
             </ul>
-          </article>
-
-          <article class="draft-panel tailored-panel">
-            <div class="panel-heading">
-              <div>
-                <p class="section-label">Role-aligned draft</p>
-                <h3>Tailored resume</h3>
-              </div>
-              <button class="secondary-button" id="copyTailoredButton" type="button">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8h11v11H8zM5 5h11v3M5 5v11h3" /></svg>
-                Copy
-              </button>
-            </div>
-            <textarea id="tailoredResumeOutput" spellcheck="true" placeholder="A tailored resume draft will appear here."></textarea>
-          </article>
+            </article>
+          </div>
         </section>
       </section>
     </main>

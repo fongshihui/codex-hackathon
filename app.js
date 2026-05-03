@@ -1,9 +1,14 @@
 const supabaseConfig = window.SUPABASE_CONFIG || {};
+const appConfig = window.APP_CONFIG || {};
+const sentryConfig = window.SENTRY_CONFIG || {};
 const isSupabaseConfigured =
   /^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(supabaseConfig.url || "") &&
   Boolean(supabaseConfig.publishableKey) &&
   supabaseConfig.publishableKey !== "YOUR_SUPABASE_PUBLISHABLE_KEY";
+
 let supabaseClient = null;
+let sentryClient = null;
+let currentSession = null;
 
 const authGate = document.querySelector("#authGate");
 const appShell = document.querySelector("#appShell");
@@ -15,17 +20,26 @@ const signInButton = document.querySelector("#signInButton");
 const signUpButton = document.querySelector("#signUpButton");
 const signOutButton = document.querySelector("#signOutButton");
 const accountEmail = document.querySelector("#accountEmail");
+const pageTitle = document.querySelector("#pageTitle");
+const pagePanels = [...document.querySelectorAll("[data-page]")];
+const pageLinks = [...document.querySelectorAll("[data-page-link]")];
 const resumeInput = document.querySelector("#resumeInput");
 const notesInput = document.querySelector("#notesInput");
 const linkedinUrlInput = document.querySelector("#linkedinUrlInput");
 const linkedinTextInput = document.querySelector("#linkedinTextInput");
+const githubUrlInput = document.querySelector("#githubUrlInput");
+const githubTextInput = document.querySelector("#githubTextInput");
 const jobUrlInput = document.querySelector("#jobUrlInput");
 const jobTextInput = document.querySelector("#jobTextInput");
 const openLinkedinButton = document.querySelector("#openLinkedinButton");
+const fetchLinkedinButton = document.querySelector("#fetchLinkedinButton");
+const fetchGithubButton = document.querySelector("#fetchGithubButton");
 const openJobButton = document.querySelector("#openJobButton");
+const fetchJobButton = document.querySelector("#fetchJobButton");
 const resumeCount = document.querySelector("#resumeCount");
 const notesCount = document.querySelector("#notesCount");
 const linkedinCount = document.querySelector("#linkedinCount");
+const githubCount = document.querySelector("#githubCount");
 const jobCount = document.querySelector("#jobCount");
 const resumeFile = document.querySelector("#resumeFile");
 const notesFile = document.querySelector("#notesFile");
@@ -34,6 +48,7 @@ const sampleButton = document.querySelector("#sampleButton");
 const clearResume = document.querySelector("#clearResume");
 const clearNotes = document.querySelector("#clearNotes");
 const clearLinkedin = document.querySelector("#clearLinkedin");
+const clearGithub = document.querySelector("#clearGithub");
 const clearJob = document.querySelector("#clearJob");
 const copyButton = document.querySelector("#copyButton");
 const copyTailoredButton = document.querySelector("#copyTailoredButton");
@@ -51,37 +66,13 @@ const qualityScore = document.querySelector("#qualityScore");
 const qualityText = document.querySelector("#qualityText");
 const toast = document.querySelector("#toast");
 
-let currentSession = null;
-
-const stopWords = new Set([
-  "the",
-  "and",
-  "for",
-  "with",
-  "that",
-  "this",
-  "from",
-  "are",
-  "was",
-  "were",
-  "you",
-  "your",
-  "their",
-  "have",
-  "has",
-  "will",
-  "can",
-  "our",
-  "they",
-  "into",
-  "using",
-  "use",
-  "work",
-  "role",
-  "team",
-  "resume",
-  "notes",
-]);
+const pageTitles = {
+  resume: "Resume intake",
+  context: "Role context",
+  analysis: "Fit analysis",
+  draft: "Editable drafts",
+  prep: "Interview practice",
+};
 
 const sampleResume = `Maya Chen
 Senior Software Engineer
@@ -116,130 +107,48 @@ Reduced dashboard latency by improving query patterns and API response handling.
 Skills
 React, TypeScript, Node.js, SQL, API design, observability, product analytics, stakeholder communication.`;
 
+const sampleGithubUrl = "https://github.com/maya-chen/analytics-workbench";
+const sampleGithubText = `GitHub Public Projects
+analytics-workbench - TypeScript project for customer analytics dashboards, event ingestion, and SQL-backed reporting. Topics: react, node, analytics, dashboards.
+api-rate-limiter - Node.js service demonstrating token bucket rate limiting, API middleware, observability, and load testing.
+data-quality-cli - Command-line tool for validating CSV exports, profiling SQL result sets, and producing quality reports.`;
+
 const sampleJobUrl = "https://example.com/jobs/senior-full-stack-engineer";
 const sampleJobText = `Senior Full Stack Engineer
 We are looking for an engineer who can own end-to-end product features across React, TypeScript, Node.js, SQL, API design, and scalable systems. The role includes building analytics workflows, improving performance, writing reliable services, collaborating with product managers, and explaining technical tradeoffs in system design interviews.`;
 
-const roleSignals = {
-  frontend: ["frontend", "front-end", "react", "vue", "angular", "ui", "css", "typescript", "javascript"],
-  backend: ["backend", "back-end", "api", "node", "java", "python", "golang", "service", "microservice"],
-  data: ["data", "analytics", "sql", "pipeline", "warehouse", "spark", "etl", "dashboard"],
-  mobile: ["mobile", "ios", "android", "swift", "kotlin", "react native"],
-  infra: ["infra", "infrastructure", "cloud", "aws", "kubernetes", "devops", "distributed", "scalability"],
-  product: ["product", "customer", "stakeholder", "launch", "onboarding", "roadmap"],
-};
+async function initializeSentry() {
+  if (!sentryConfig.browserDsn) return;
 
-const lcQuestionBank = {
-  arrays: [
-    "Best Time to Buy and Sell Stock - one-pass array scanning",
-    "Product of Array Except Self - prefix and suffix reasoning",
-  ],
-  hashmaps: [
-    "Two Sum - hash map lookup fundamentals",
-    "Longest Consecutive Sequence - set-based sequence detection",
-  ],
-  graphs: [
-    "Number of Islands - DFS/BFS traversal",
-    "Course Schedule - dependency graph and cycle detection",
-  ],
-  dp: [
-    "Climbing Stairs - base-case dynamic programming",
-    "Coin Change - bottom-up DP and state transitions",
-    "Longest Increasing Subsequence - sequence DP tradeoffs",
-  ],
-  strings: [
-    "Longest Substring Without Repeating Characters - sliding window",
-    "Minimum Window Substring - constrained matching",
-  ],
-  trees: [
-    "Binary Tree Level Order Traversal - BFS traversal",
-    "Lowest Common Ancestor of a Binary Tree - recursive tree reasoning",
-  ],
-  frontend: [
-    "Valid Parentheses - stack discipline for UI state parsing",
-    "Merge Intervals - calendar, timeline, and layout conflict handling",
-    "LRU Cache - browser cache and client data-store fundamentals",
-  ],
-  backend: [
-    "Two Sum - hash map lookup fundamentals",
-    "Top K Frequent Elements - API ranking and aggregation patterns",
-    "Design Add and Search Words Data Structure - trie-backed search",
-    "Course Schedule - dependency graph and cycle detection",
-  ],
-  data: [
-    "Group Anagrams - grouping and normalization",
-    "Kth Largest Element in an Array - selection and heap practice",
-    "Subarray Sum Equals K - prefix sums for event streams",
-  ],
-  mobile: [
-    "Binary Tree Level Order Traversal - stateful screen rendering",
-    "Clone Graph - object graph copying and offline state",
-    "Number of Islands - grid traversal for map-like interfaces",
-  ],
-  infra: [
-    "Number of Connected Components - cluster membership reasoning",
-    "Network Delay Time - graph latency and shortest path practice",
-    "Insert Delete GetRandom O(1) - storage and indexing tradeoffs",
-  ],
-  product: [
-    "Meeting Rooms II - scheduling capacity and resource planning",
-    "Minimum Window Substring - requirement matching under constraints",
-  ],
-  default: [
-    "Two Sum - hash maps and input scanning",
-    "Valid Parentheses - stacks",
-    "Merge Intervals - sorting and interval reasoning",
-    "Top K Frequent Elements - heaps and frequency maps",
-    "Course Schedule - graph cycle detection",
-    "Longest Substring Without Repeating Characters - sliding window",
-  ],
-};
+  try {
+    sentryClient = await import("https://cdn.jsdelivr.net/npm/@sentry/browser/+esm");
+    sentryClient.init({
+      dsn: sentryConfig.browserDsn,
+      environment: sentryConfig.environment || "development",
+      release: sentryConfig.release,
+      tracesSampleRate: Number(sentryConfig.tracesSampleRate || 0),
+      beforeSend(event) {
+        if (event.request?.headers) {
+          delete event.request.headers.authorization;
+          delete event.request.headers.cookie;
+        }
+        delete event.user;
+        return event;
+      },
+    });
+    sentryClient.setTag("app", "interview-prep-studio");
+  } catch {
+    sentryClient = null;
+  }
+}
 
-const algorithmSignals = {
-  arrays: ["array", "arrays", "list", "lists"],
-  hashmaps: ["hash map", "hashmap", "map", "dictionary", "set"],
-  graphs: ["graph", "graphs", "bfs", "dfs", "dependency"],
-  dp: ["dynamic programming", "dp", "recursion", "memoization"],
-  strings: ["string", "substring", "text", "parsing"],
-  trees: ["tree", "binary tree", "heap", "trie"],
-};
-
-const systemDesignBank = {
-  frontend: [
-    "Design a collaborative document editor with autosave, conflict handling, and offline recovery.",
-    "Design a component analytics dashboard that stays fast with large tables and live filters.",
-  ],
-  backend: [
-    "Design a rate-limited REST API for a SaaS analytics product.",
-    "Design an event ingestion pipeline that supports retries, deduplication, and replay.",
-  ],
-  data: [
-    "Design a product analytics dashboard from event collection to query serving.",
-    "Design a customer health scoring pipeline with batch and near-real-time updates.",
-  ],
-  mobile: [
-    "Design an offline-first mobile notes app with sync conflict resolution.",
-    "Design push notifications for a mobile product with preference controls and delivery tracking.",
-  ],
-  infra: [
-    "Design a multi-region file upload service with durability, virus scanning, and access control.",
-    "Design observability for microservices with logs, metrics, traces, and alert routing.",
-  ],
-  product: [
-    "Design an onboarding workflow platform with experiments, analytics, and admin configuration.",
-    "Design a feedback intake system that turns customer notes into product insights.",
-  ],
-  default: [
-    "Design a URL shortener with analytics and abuse prevention.",
-    "Design a notification system with email, push, retries, and user preferences.",
-    "Design a real-time chat service with presence, message history, and moderation.",
-  ],
-};
+function reportError(error, context = {}) {
+  if (sentryClient) sentryClient.captureException(error, { extra: context });
+}
 
 function words(text) {
-  return text
-    .toLowerCase()
-    .replace(/[^a-z0-9+\s-]/g, " ")
+  return String(text || "")
+    .replace(/[^a-z0-9+\s-]/gi, " ")
     .split(/\s+/)
     .filter(Boolean);
 }
@@ -248,69 +157,118 @@ function wordCount(text) {
   return words(text).length;
 }
 
-function topTerms(text, limit = 10) {
-  const counts = new Map();
-  for (const token of words(text)) {
-    if (token.length < 3 || stopWords.has(token)) continue;
-    counts.set(token, (counts.get(token) || 0) + 1);
-  }
-  return [...counts.entries()]
-    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-    .slice(0, limit)
-    .map(([term]) => term);
-}
-
-function sentenceCandidates(text) {
-  return text
-    .split(/(?<=[.!?])\s+|\n+/)
-    .map((item) => item.trim())
-    .filter((item) => item.length > 24);
-}
-
-function keywordOverlap(resumeTerms, noteTerms) {
-  const resumeSet = new Set(resumeTerms);
-  return noteTerms.filter((term) => resumeSet.has(term));
-}
-
 function getContext() {
-  const resumeText = resumeInput.value.trim();
-  const notesText = notesInput.value.trim();
-  const linkedinText = linkedinTextInput.value.trim();
-  const jobText = jobTextInput.value.trim();
-  const candidateText = `${resumeText}\n${linkedinText}`.trim();
-  const targetText = `${notesText}\n${jobText}`.trim();
-  const allText = `${candidateText}\n${targetText}`.trim();
   return {
-    resumeText,
-    notesText,
-    linkedinText,
-    jobText,
-    candidateText,
-    targetText,
-    allText,
-    linkedinUrl: linkedinUrlInput.value.trim(),
-    jobUrl: jobUrlInput.value.trim(),
+    resumeText: resumeInput.value.trim(),
+    notesText: notesInput.value.trim(),
+    linkedinText: linkedinTextInput.value.trim(),
+    githubText: githubTextInput.value.trim(),
+    jobText: jobTextInput.value.trim(),
+    linkedinUrl: normalizeUrl(linkedinUrlInput.value),
+    githubUrl: normalizeUrl(githubUrlInput.value),
+    jobUrl: normalizeUrl(jobUrlInput.value),
   };
 }
 
-function detectTracks(text) {
-  const normalized = text.toLowerCase();
-  const matches = Object.entries(roleSignals)
-    .map(([track, terms]) => ({
-      track,
-      score: terms.reduce((total, term) => total + (normalized.includes(term) ? 1 : 0), 0),
-    }))
-    .filter((item) => item.score > 0)
-    .sort((a, b) => b.score - a.score)
-    .map((item) => item.track);
-  return matches.length ? matches.slice(0, 3) : ["default"];
+function hasInput(context) {
+  return Boolean(
+    context.resumeText ||
+      context.notesText ||
+      context.linkedinText ||
+      context.githubText ||
+      context.jobText ||
+      context.linkedinUrl ||
+      context.githubUrl ||
+      context.jobUrl,
+  );
 }
 
-function detectAlgorithmTopics(text) {
-  const normalized = text.toLowerCase();
-  return Object.entries(algorithmSignals)
-    .filter(([, terms]) => terms.some((term) => normalized.includes(term)))
-    .map(([topic]) => topic);
+async function analyze() {
+  const context = getContext();
+  if (!hasInput(context)) {
+    showToast("Add resume, profile, GitHub, notes, or job details first.");
+    return;
+  }
+
+  if (window.location.protocol === "file:") {
+    showToast("Start the Node server to use the AI API.");
+    return;
+  }
+
+  if (!currentSession?.access_token) {
+    showToast("Sign in before generating AI output.");
+    return;
+  }
+
+  clearGeneratedOutput();
+  setGenerateLoading(true);
+
+  try {
+    const apiBaseUrl = (appConfig.apiBaseUrl || window.location.origin).replace(/\/$/, "");
+    const response = await fetch(`${apiBaseUrl}/api/generate`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${currentSession.access_token}`,
+      },
+      body: JSON.stringify({ context }),
+    });
+    const payload = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(payload.error || "AI generation failed.");
+    }
+
+    applyAiOutput(payload);
+    showToast("AI output generated.");
+  } catch (error) {
+    reportError(error, { feature: "ai-generation" });
+    showToast(error.message || "AI generation failed.");
+  } finally {
+    setGenerateLoading(false);
+  }
+}
+
+function applyAiOutput(payload) {
+  const score = Number(payload.fitScore ?? payload.score ?? 0);
+  setScore(Number.isFinite(score) ? Math.max(0, Math.min(100, Math.round(score))) : 0);
+
+  fitSummary.textContent = cleanString(payload.fitSummary) || "AI generated the output below.";
+  renderList(strengthList, cleanStringArray(payload.strengths), "No strengths returned by AI.");
+  renderList(gapList, cleanStringArray(payload.gaps), "No gaps returned by AI.");
+  renderList(actionList, cleanStringArray(payload.actions), "No actions returned by AI.");
+  renderList(lcList, cleanStringArray(payload.leetcodeQuestions), "No LeetCode plan returned by AI.");
+  renderList(systemList, cleanStringArray(payload.systemDesignPrompts), "No system design prompts returned by AI.");
+  briefOutput.value = cleanString(payload.candidateBrief);
+  tailoredResumeOutput.value = cleanString(payload.tailoredResume);
+  setActivePage("analysis", true);
+}
+
+function clearGeneratedOutput() {
+  setScore(0);
+  fitSummary.textContent = "Generating with AI...";
+  renderList(strengthList, [], "Generating strengths...");
+  renderList(gapList, [], "Generating gaps...");
+  renderList(actionList, [], "Generating actions...");
+  renderList(lcList, [], "Generating LeetCode plan...");
+  renderList(systemList, [], "Generating system design prompts...");
+  briefOutput.value = "";
+  tailoredResumeOutput.value = "";
+}
+
+function setScore(score) {
+  fitScore.textContent = score;
+  fitMeter.style.width = `${score}%`;
+  qualityScore.textContent = `${score}%`;
+  if (score >= 75) {
+    qualityText.textContent = "Strong AI-assessed match.";
+  } else if (score >= 45) {
+    qualityText.textContent = "Partial match. Review AI gaps and missing proof.";
+  } else if (score > 0) {
+    qualityText.textContent = "Weak match or insufficient evidence.";
+  } else {
+    qualityText.textContent = "Generate with AI to score the candidate.";
+  }
 }
 
 function renderList(target, items, fallback) {
@@ -324,208 +282,27 @@ function renderList(target, items, fallback) {
   }
 }
 
-function uniqueItems(items, limit) {
-  return [...new Set(items)].slice(0, limit);
+function cleanString(value) {
+  return typeof value === "string" ? value.trim() : "";
 }
 
-function setScore(score) {
-  fitScore.textContent = score;
-  fitMeter.style.width = `${score}%`;
-  qualityScore.textContent = `${score}%`;
-  if (score >= 75) {
-    qualityText.textContent = "Strong intake quality. The brief has enough signal to refine.";
-  } else if (score >= 45) {
-    qualityText.textContent = "Usable start. Add more measurable details for a sharper output.";
-  } else {
-    qualityText.textContent = "Add a resume and notes to begin.";
-  }
+function cleanStringArray(items) {
+  return Array.isArray(items)
+    ? items.map((item) => String(item).trim()).filter(Boolean).slice(0, 12)
+    : [];
 }
 
-function analyze() {
-  const context = getContext();
-  const resumeTerms = topTerms(context.candidateText, 16);
-  const noteTerms = topTerms(context.targetText, 16);
-  const overlap = keywordOverlap(resumeTerms, noteTerms);
-  const missing = noteTerms.filter((term) => !resumeTerms.includes(term)).slice(0, 8);
-  const notesWordCount = wordCount(context.targetText);
-  const candidateWordCount = wordCount(context.candidateText);
-  const tracks = detectTracks(context.allText);
-
-  if (!context.candidateText && !context.targetText) {
-    showToast("Add resume, LinkedIn text, notes, or a job description first.");
-    return;
-  }
-
-  const baseScore = Math.min(45, Math.round(candidateWordCount / 10)) + Math.min(25, Math.round(notesWordCount / 8));
-  const overlapScore = Math.min(30, overlap.length * 5);
-  const score = Math.min(100, baseScore + overlapScore);
-
-  const notableSentences = sentenceCandidates(context.candidateText)
-    .filter((sentence) => /\d|led|built|owned|created|improved|reduced|launched|managed/i.test(sentence))
-    .slice(0, 3);
-
-  const strengths = [
-    ...notableSentences,
-    ...overlap.slice(0, 3).map((term) => `Resume and notes both emphasize ${term}.`),
-  ].slice(0, 5);
-
-  const gaps = missing.map((term) => `Notes mention ${term}, but the resume does not surface it clearly.`);
-  if (candidateWordCount > 0 && candidateWordCount < 120) {
-    gaps.unshift("Candidate profile text is short, so the analysis may miss scope, seniority, and impact.");
-  }
-  if (notesWordCount > 0 && notesWordCount < 35) {
-    gaps.unshift("Target context is brief. Add a job description for stronger recommendations.");
-  }
-  if (context.linkedinUrl && !context.linkedinText) {
-    gaps.unshift("LinkedIn URL is present, but pasted LinkedIn text is needed for local analysis.");
-  }
-  if (context.jobUrl && !context.jobText) {
-    gaps.unshift("Job URL is present, but pasted job description text is needed for local analysis.");
-  }
-
-  const actions = [
-    missing[0] ? `Add one resume bullet that proves experience with ${missing[0]}.` : "Add one quantified result to the strongest resume bullet.",
-    "Rewrite the opening summary around the target role, not only past responsibilities.",
-    "Pull 2-3 measurable outcomes into the top half of the resume.",
-    overlap[0] ? `Prepare an interview story around ${overlap[0]}.` : "Add target-role keywords to the notes field for a better fit read.",
-  ];
-
-  setScore(score);
-  fitSummary.textContent =
-    score >= 75
-      ? "The resume and notes have strong alignment. Focus on sharpening measurable impact and making the top summary more role-specific."
-      : score >= 45
-        ? "There is enough signal to create a useful brief, but the resume should better mirror the target notes and include more proof."
-        : "The intake is thin. Add the target role, job requirements, feedback, and more resume detail to improve the analysis.";
-
-  renderList(strengthList, strengths, "No clear strengths found yet.");
-  renderList(gapList, gaps.slice(0, 5), "No obvious gaps found from the current input.");
-  renderList(actionList, actions, "Actions will be generated from the resume and notes.");
-  renderPrep(tracks, detectAlgorithmTopics(context.allText), overlap, missing);
-  briefOutput.value = buildBrief(context, score, resumeTerms, noteTerms, strengths, gaps, actions);
-  tailoredResumeOutput.value = buildTailoredResume(context, resumeTerms, noteTerms, overlap, missing, strengths, tracks);
-}
-
-function renderPrep(tracks, algorithmTopics, overlap, missing) {
-  const lcQuestions = uniqueItems(
-    [
-      ...algorithmTopics.flatMap((topic) => lcQuestionBank[topic] || []),
-      ...tracks.flatMap((track) => lcQuestionBank[track] || []),
-      ...lcQuestionBank.default,
-    ],
-    8,
-  ).map((question, index) => {
-    const focus = index < 3 && overlap[index] ? ` Focus: connect it to ${overlap[index]}.` : "";
-    return `${question}.${focus}`;
-  });
-
-  const designPrompts = uniqueItems(
-    [
-      ...tracks.flatMap((track) => systemDesignBank[track] || []),
-      ...systemDesignBank.default,
-    ],
-    6,
-  ).map((prompt, index) => {
-    const gap = missing[index];
-    return gap ? `${prompt} Explicitly discuss ${gap}.` : prompt;
-  });
-
-  renderList(lcList, lcQuestions, "Practice questions will be generated from the target role and resume.");
-  renderList(systemList, designPrompts, "System design prompts will appear after generation.");
-}
-
-function buildBrief(context, score, resumeTerms, noteTerms, strengths, gaps, actions) {
-  const shared = keywordOverlap(resumeTerms, noteTerms);
-  return [
-    "Candidate Brief",
-    "",
-    `Fit signal: ${score}/100`,
-    `LinkedIn: ${context.linkedinUrl || "Not provided"}`,
-    `Job posting: ${context.jobUrl || "Not provided"}`,
-    `Shared keywords: ${shared.length ? shared.join(", ") : "Not enough overlap yet."}`,
-    `Candidate themes: ${resumeTerms.slice(0, 8).join(", ") || "Add resume or LinkedIn text."}`,
-    `Target themes: ${noteTerms.slice(0, 8).join(", ") || "Add notes or job description."}`,
-    "",
-    "Positioning Summary",
-    strengths.length
-      ? `This candidate should be positioned around ${shared.slice(0, 3).join(", ") || "the strongest resume evidence"} with emphasis on measurable outcomes and direct relevance to the target role.`
-      : "Add more resume detail to generate a stronger positioning summary.",
-    "",
-    "Top Strengths",
-    ...(strengths.length ? strengths.map((item) => `- ${item}`) : ["- Add resume achievements to identify strengths."]),
-    "",
-    "Gaps To Address",
-    ...(gaps.length ? gaps.slice(0, 5).map((item) => `- ${item}`) : ["- No obvious gaps found from the current input."]),
-    "",
-    "Recommended Next Actions",
-    ...actions.map((item, index) => `${index + 1}. ${item}`),
-  ].join("\n");
-}
-
-function extractName(resumeText) {
-  const firstLine = resumeText
-    .split("\n")
-    .map((line) => line.trim())
-    .find(Boolean);
-  return firstLine && firstLine.length < 60 ? firstLine : "Candidate Name";
-}
-
-function buildTailoredResume(context, resumeTerms, noteTerms, overlap, missing, strengths, tracks) {
-  const name = extractName(context.resumeText || context.linkedinText);
-  const roleFocus = noteTerms.slice(0, 5).join(", ") || "target role requirements";
-  const matched = overlap.slice(0, 6);
-  const mustAdd = missing.slice(0, 5);
-  const achievementLines = sentenceCandidates(context.candidateText)
-    .filter((sentence) => /\d|led|built|owned|created|improved|reduced|launched|managed|designed/i.test(sentence))
-    .slice(0, 5);
-
-  return [
-    name,
-    `${titleCase(tracks[0] === "default" ? "Role-Aligned Candidate" : `${tracks[0]} candidate`)} | ${roleFocus}`,
-    context.linkedinUrl ? `LinkedIn: ${context.linkedinUrl}` : "",
-    "",
-    "Summary",
-    `Candidate positioned for roles requiring ${roleFocus}. Emphasize ${matched.slice(0, 3).join(", ") || resumeTerms.slice(0, 3).join(", ") || "relevant experience"} with concrete ownership, measurable impact, and interview-ready examples.`,
-    "",
-    "Selected Experience Bullets",
-    ...(achievementLines.length
-      ? achievementLines.map((line) => `- ${tightenBullet(line, matched, mustAdd)}`)
-      : ["- Add 3-5 measurable bullets from the original resume, each tied to the target role notes."]),
-    "",
-    "Keyword Alignment",
-    `Use prominently: ${uniqueItems([...matched, ...noteTerms], 10).join(", ") || "Add job description keywords to notes."}`,
-    "",
-    "Missing Proof To Add",
-    ...(mustAdd.length
-      ? mustAdd.map((term) => `- Add a specific bullet, project, or metric proving ${term}.`)
-      : ["- Add one stronger metric for scope, scale, latency, revenue, adoption, or quality."]),
-    "",
-    "Skills To Surface",
-    uniqueItems([...resumeTerms, ...noteTerms], 14).join(", ") || "Add resume and notes to generate skills.",
-    "",
-    "Interview Story Bank",
-    ...(strengths.length
-      ? strengths.slice(0, 4).map((item) => `- Prepare a STAR story for: ${item}`)
-      : ["- Prepare stories for ownership, conflict, technical tradeoffs, and measurable impact."]),
-  ].join("\n");
-}
-
-function titleCase(text) {
-  return text.replace(/\b\w/g, (char) => char.toUpperCase());
-}
-
-function tightenBullet(line, matched, missing) {
-  const clean = line.replace(/^[-*]\s*/, "").replace(/\s+/g, " ").trim();
-  const keyword = matched[0] || missing[0];
-  return keyword && !clean.toLowerCase().includes(keyword)
-    ? `${clean} Tie this bullet more explicitly to ${keyword}.`
-    : clean;
+function setGenerateLoading(isLoading) {
+  analyzeButton.disabled = isLoading;
+  analyzeButton.dataset.label ||= analyzeButton.textContent.trim();
+  analyzeButton.lastChild.textContent = isLoading ? "Generating..." : analyzeButton.dataset.label;
 }
 
 function updateCounts() {
   resumeCount.textContent = `${wordCount(resumeInput.value)} words`;
   notesCount.textContent = `${wordCount(notesInput.value)} words`;
   linkedinCount.textContent = `${wordCount(linkedinTextInput.value)} words`;
+  githubCount.textContent = `${wordCount(githubTextInput.value)} words`;
   jobCount.textContent = `${wordCount(jobTextInput.value)} words`;
 }
 
@@ -540,114 +317,6 @@ function readFileInto(input, target) {
   };
   reader.onerror = () => showToast("Could not read that file.");
   reader.readAsText(file);
-}
-
-function showToast(message) {
-  toast.textContent = message;
-  toast.classList.add("is-visible");
-  window.clearTimeout(showToast.timeout);
-  showToast.timeout = window.setTimeout(() => toast.classList.remove("is-visible"), 2200);
-}
-
-function setAuthMessage(message, isError = false) {
-  authMessage.textContent = message;
-  authMessage.classList.toggle("is-error", isError);
-}
-
-function setAuthLoading(isLoading) {
-  signInButton.disabled = isLoading || !supabaseClient;
-  signUpButton.disabled = isLoading || !supabaseClient;
-  signInButton.textContent = isLoading ? "Working..." : "Sign in";
-}
-
-function renderAuthState(session) {
-  currentSession = session;
-  const isSignedIn = Boolean(session?.user);
-  authGate.classList.toggle("is-hidden", isSignedIn);
-  appShell.classList.toggle("is-hidden", !isSignedIn);
-  accountEmail.textContent = session?.user?.email || "";
-
-  if (isSignedIn) {
-    if (!window.location.hash || window.location.hash === "#auth") {
-      window.location.hash = "#inputs";
-    }
-    return;
-  }
-
-  window.location.hash = "#auth";
-}
-
-async function initializeAuth() {
-  if (!supabaseClient) {
-    if (!isSupabaseConfigured) {
-      setAuthMessage("Add your Supabase project URL and publishable key in index.html.", true);
-      setAuthLoading(false);
-      return;
-    }
-
-    try {
-      const { createClient } = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm");
-      supabaseClient = createClient(supabaseConfig.url, supabaseConfig.publishableKey);
-    } catch {
-      setAuthMessage("Could not load the Supabase browser client.", true);
-      setAuthLoading(false);
-      return;
-    }
-  }
-
-  setAuthMessage("Checking session...");
-  const { data, error } = await supabaseClient.auth.getSession();
-  if (error) {
-    setAuthMessage(error.message, true);
-    renderAuthState(null);
-    return;
-  }
-
-  renderAuthState(data.session);
-  setAuthMessage("Sign in or create an account to continue.");
-
-  supabaseClient.auth.onAuthStateChange((_event, session) => {
-    renderAuthState(session);
-  });
-}
-
-async function signIn() {
-  if (!authForm.reportValidity()) return;
-  if (!supabaseClient) return;
-  setAuthLoading(true);
-  const { error } = await supabaseClient.auth.signInWithPassword({
-    email: authEmail.value.trim(),
-    password: authPassword.value,
-  });
-  setAuthLoading(false);
-  if (error) {
-    setAuthMessage(error.message, true);
-    return;
-  }
-  setAuthMessage("Signed in.");
-}
-
-async function signUp() {
-  if (!authForm.reportValidity()) return;
-  if (!supabaseClient) return;
-  setAuthLoading(true);
-  const { data, error } = await supabaseClient.auth.signUp({
-    email: authEmail.value.trim(),
-    password: authPassword.value,
-    options: {
-      emailRedirectTo: window.location.origin + window.location.pathname,
-    },
-  });
-  setAuthLoading(false);
-  if (error) {
-    setAuthMessage(error.message, true);
-    return;
-  }
-  if (!data.session) {
-    setAuthMessage("Account created. Check your email to confirm before signing in.");
-    return;
-  }
-  setAuthMessage("Account created.");
 }
 
 function normalizeUrl(rawUrl) {
@@ -666,20 +335,345 @@ function openUrlFrom(input, label) {
   try {
     const parsed = new URL(url);
     window.open(parsed.href, "_blank", "noopener,noreferrer");
-    showToast(`Opened ${label}. Copy text back into the paste box.`);
+    showToast(`Opened ${label}. Copy useful text back into the app.`);
   } catch {
     showToast(`Enter a valid ${label} URL.`);
+  }
+}
+
+function parseGithubUrl(rawUrl) {
+  const url = normalizeUrl(rawUrl);
+  if (!url) return null;
+
+  try {
+    const parsed = new URL(url);
+    if (parsed.hostname.toLowerCase() !== "github.com") return null;
+    const [owner, repo] = parsed.pathname.split("/").filter(Boolean);
+    if (!owner) return null;
+    return {
+      owner,
+      repo: repo && !["stars", "repositories", "projects"].includes(repo.toLowerCase()) ? repo : "",
+      href: `https://github.com/${owner}${repo ? `/${repo}` : ""}`,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function repoSummary(repo, readmeText = "") {
+  const topics = Array.isArray(repo.topics) && repo.topics.length ? ` Topics: ${repo.topics.slice(0, 8).join(", ")}.` : "";
+  const language = repo.language ? ` Language: ${repo.language}.` : "";
+  const stars = Number.isFinite(repo.stargazers_count) ? ` Stars: ${repo.stargazers_count}.` : "";
+  const description = repo.description || "No public description provided.";
+  const readme = readmeText ? `\nREADME excerpt: ${readmeText}` : "";
+  return `${repo.name} - ${description}${language}${topics}${stars}${readme}`;
+}
+
+function decodeGithubContent(content) {
+  if (!content) return "";
+  try {
+    return atob(content.replace(/\s/g, ""));
+  } catch {
+    return "";
+  }
+}
+
+function trimGithubReadme(text) {
+  return text
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/!\[[^\]]*]\([^)]+\)/g, " ")
+    .replace(/\[[^\]]+]\([^)]+\)/g, (match) => match.slice(1).split("]")[0])
+    .replace(/[#>*_`|~-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 900);
+}
+
+async function githubApi(path) {
+  const response = await fetch(`https://api.github.com${path}`, {
+    headers: {
+      Accept: "application/vnd.github+json",
+      "X-GitHub-Api-Version": "2022-11-28",
+    },
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(payload.message || "GitHub import failed.");
+  return payload;
+}
+
+async function fetchGithubReadme(owner, repo) {
+  try {
+    const readme = await githubApi(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/readme`);
+    return trimGithubReadme(decodeGithubContent(readme.content));
+  } catch {
+    return "";
+  }
+}
+
+async function importGithubProjects() {
+  const parsed = parseGithubUrl(githubUrlInput.value);
+  if (!parsed) {
+    showToast("Enter a public GitHub profile or repository URL.");
+    return;
+  }
+
+  fetchGithubButton.disabled = true;
+  fetchGithubButton.dataset.label ||= fetchGithubButton.textContent.trim();
+  fetchGithubButton.lastChild.textContent = "Importing...";
+
+  try {
+    if (parsed.repo) {
+      const repo = await githubApi(`/repos/${encodeURIComponent(parsed.owner)}/${encodeURIComponent(parsed.repo)}`);
+      const readme = await fetchGithubReadme(parsed.owner, parsed.repo);
+      githubTextInput.value = ["GitHub Public Project", `URL: ${parsed.href}`, repoSummary(repo, readme)].join("\n");
+    } else {
+      const repos = await githubApi(
+        `/users/${encodeURIComponent(parsed.owner)}/repos?sort=updated&direction=desc&per_page=8`,
+      );
+      const publicRepos = repos
+        .filter((repo) => !repo.fork && !repo.archived)
+        .sort((a, b) => b.stargazers_count - a.stargazers_count || new Date(b.updated_at) - new Date(a.updated_at))
+        .slice(0, 6);
+      githubTextInput.value = [
+        "GitHub Public Projects",
+        `Profile: ${parsed.href}`,
+        ...publicRepos.map((repo) => repoSummary(repo)),
+      ].join("\n");
+    }
+    updateCounts();
+    showToast("GitHub projects imported.");
+  } catch (error) {
+    showToast(error.message || "Could not import that GitHub URL.");
+  } finally {
+    fetchGithubButton.disabled = false;
+    fetchGithubButton.lastChild.textContent = fetchGithubButton.dataset.label;
+  }
+}
+
+async function importLinkedinProfile() {
+  const url = normalizeUrl(linkedinUrlInput.value);
+  if (!url) {
+    showToast("Enter a public LinkedIn profile URL.");
+    return;
+  }
+
+  if (!currentSession?.access_token) {
+    showToast("Sign in before importing LinkedIn.");
+    return;
+  }
+
+  fetchLinkedinButton.disabled = true;
+  fetchLinkedinButton.dataset.label ||= fetchLinkedinButton.textContent.trim();
+  fetchLinkedinButton.lastChild.textContent = "Importing...";
+
+  try {
+    const apiBaseUrl = (appConfig.apiBaseUrl || window.location.origin).replace(/\/$/, "");
+    const response = await fetch(`${apiBaseUrl}/api/linkedin/extract`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${currentSession.access_token}`,
+      },
+      body: JSON.stringify({ url }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(payload.error || payload.details?.[0] || "LinkedIn import failed.");
+    }
+
+    linkedinTextInput.value = payload.text || JSON.stringify(payload.raw || payload, null, 2);
+    updateCounts();
+    showToast("LinkedIn profile imported.");
+  } catch (error) {
+    reportError(error, { feature: "linkedin-import" });
+    showToast(error.message || "Could not import that LinkedIn profile.");
+  } finally {
+    fetchLinkedinButton.disabled = false;
+    fetchLinkedinButton.lastChild.textContent = fetchLinkedinButton.dataset.label;
+  }
+}
+
+async function importJobPosting() {
+  const url = normalizeUrl(jobUrlInput.value);
+  if (!url) {
+    showToast("Enter a public job posting URL.");
+    return;
+  }
+
+  if (!currentSession?.access_token) {
+    showToast("Sign in before importing a job posting.");
+    return;
+  }
+
+  fetchJobButton.disabled = true;
+  fetchJobButton.dataset.label ||= fetchJobButton.textContent.trim();
+  fetchJobButton.lastChild.textContent = "Importing...";
+
+  try {
+    const apiBaseUrl = (appConfig.apiBaseUrl || window.location.origin).replace(/\/$/, "");
+    const response = await fetch(`${apiBaseUrl}/api/job/extract`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${currentSession.access_token}`,
+      },
+      body: JSON.stringify({ url }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(payload.error || payload.details?.[0] || "Job import failed.");
+    }
+
+    jobTextInput.value = payload.text || JSON.stringify(payload.raw || payload, null, 2);
+    updateCounts();
+    showToast("Job posting imported.");
+  } catch (error) {
+    reportError(error, { feature: "job-import" });
+    showToast(error.message || "Could not import that job posting.");
+  } finally {
+    fetchJobButton.disabled = false;
+    fetchJobButton.lastChild.textContent = fetchJobButton.dataset.label;
+  }
+}
+
+function setAuthMessage(message, isError = false) {
+  authMessage.textContent = message;
+  authMessage.classList.toggle("is-error", isError);
+}
+
+function getRequestedPage() {
+  const requested = window.location.hash.replace(/^#/, "");
+  return pageTitles[requested] ? requested : "resume";
+}
+
+function setActivePage(page, updateHash = false) {
+  const activePage = pageTitles[page] ? page : "resume";
+  for (const panel of pagePanels) {
+    panel.classList.toggle("is-active", panel.dataset.page === activePage);
+  }
+  for (const link of pageLinks) {
+    link.classList.toggle("is-active", link.dataset.pageLink === activePage);
+  }
+  pageTitle.textContent = pageTitles[activePage];
+  if (sentryClient) sentryClient.setTag("workspace_page", activePage);
+  if (updateHash && window.location.hash !== `#${activePage}`) {
+    window.location.hash = activePage;
+  }
+}
+
+function setAuthLoading(isLoading) {
+  signInButton.disabled = isLoading || !supabaseClient;
+  signUpButton.disabled = isLoading || !supabaseClient;
+}
+
+function renderAuthState(session) {
+  currentSession = session;
+  const isSignedIn = Boolean(session);
+  authGate.classList.toggle("is-hidden", isSignedIn);
+  appShell.classList.toggle("is-hidden", !isSignedIn);
+  accountEmail.textContent = session?.user?.email || "";
+  if (sentryClient) sentryClient.setTag("auth_state", isSignedIn ? "signed_in" : "signed_out");
+
+  if (isSignedIn) {
+    if (!window.location.hash || window.location.hash === "#auth") window.location.hash = "#resume";
+    setActivePage(getRequestedPage());
+  } else {
+    window.location.hash = "#auth";
+  }
+}
+
+async function initializeAuth() {
+  if (!isSupabaseConfigured) {
+    setAuthMessage("Configure Supabase in config.local.js to enable sign in.", true);
+    setAuthLoading(false);
+    return;
+  }
+
+  try {
+    const { createClient } = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm");
+    supabaseClient = createClient(supabaseConfig.url, supabaseConfig.publishableKey);
+  } catch (error) {
+    reportError(error, { feature: "supabase-import" });
+    setAuthMessage("Could not load Supabase client.", true);
+    return;
+  }
+
+  setAuthLoading(false);
+  const { data, error } = await supabaseClient.auth.getSession();
+  if (error) {
+    setAuthMessage(error.message, true);
+    return;
+  }
+  renderAuthState(data.session);
+  if (!data.session) setAuthMessage("Sign in or create an account to continue.");
+
+  supabaseClient.auth.onAuthStateChange((_event, session) => {
+    renderAuthState(session);
+    setAuthMessage(session ? "Signed in." : "Signed out.");
+  });
+}
+
+async function signIn() {
+  if (!authForm.reportValidity() || !supabaseClient) return;
+  setAuthLoading(true);
+  const { error } = await supabaseClient.auth.signInWithPassword({
+    email: authEmail.value.trim(),
+    password: authPassword.value,
+  });
+  setAuthLoading(false);
+  if (error) setAuthMessage(error.message, true);
+}
+
+async function signUp() {
+  if (!authForm.reportValidity() || !supabaseClient) return;
+  setAuthLoading(true);
+  const { data, error } = await supabaseClient.auth.signUp({
+    email: authEmail.value.trim(),
+    password: authPassword.value,
+  });
+  setAuthLoading(false);
+  if (error) {
+    setAuthMessage(error.message, true);
+    return;
+  }
+  setAuthMessage(data.session ? "Account created." : "Account created. Check your email to confirm before signing in.");
+}
+
+function showToast(message) {
+  toast.textContent = message;
+  toast.classList.add("is-visible");
+  window.clearTimeout(showToast.timeout);
+  showToast.timeout = window.setTimeout(() => toast.classList.remove("is-visible"), 2400);
+}
+
+async function copyTextArea(target, successMessage) {
+  if (!target.value.trim()) {
+    showToast("Generate output first.");
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(target.value);
+    showToast(successMessage);
+  } catch {
+    target.focus();
+    target.select();
+    document.execCommand("copy");
+    showToast("Text selected and copied.");
   }
 }
 
 resumeInput.addEventListener("input", updateCounts);
 notesInput.addEventListener("input", updateCounts);
 linkedinTextInput.addEventListener("input", updateCounts);
+githubTextInput.addEventListener("input", updateCounts);
 jobTextInput.addEventListener("input", updateCounts);
 resumeFile.addEventListener("change", () => readFileInto(resumeFile, resumeInput));
 notesFile.addEventListener("change", () => readFileInto(notesFile, notesInput));
 openLinkedinButton.addEventListener("click", () => openUrlFrom(linkedinUrlInput, "LinkedIn"));
+fetchLinkedinButton.addEventListener("click", importLinkedinProfile);
+fetchGithubButton.addEventListener("click", importGithubProjects);
 openJobButton.addEventListener("click", () => openUrlFrom(jobUrlInput, "job posting"));
+fetchJobButton.addEventListener("click", importJobPosting);
 analyzeButton.addEventListener("click", analyze);
 authForm.addEventListener("submit", (event) => {
   event.preventDefault();
@@ -692,9 +686,8 @@ signOutButton.addEventListener("click", async () => {
   showToast(error ? error.message : "Signed out.");
 });
 window.addEventListener("hashchange", () => {
-  if (!currentSession && window.location.hash !== "#auth") {
-    window.location.hash = "#auth";
-  }
+  if (!currentSession && window.location.hash !== "#auth") window.location.hash = "#auth";
+  if (currentSession) setActivePage(getRequestedPage());
 });
 
 sampleButton.addEventListener("click", () => {
@@ -702,11 +695,13 @@ sampleButton.addEventListener("click", () => {
   notesInput.value = sampleNotes;
   linkedinUrlInput.value = sampleLinkedinUrl;
   linkedinTextInput.value = sampleLinkedinText;
+  githubUrlInput.value = sampleGithubUrl;
+  githubTextInput.value = sampleGithubText;
   jobUrlInput.value = sampleJobUrl;
   jobTextInput.value = sampleJobText;
   updateCounts();
-  analyze();
-  showToast("Sample loaded.");
+  setActivePage("context", true);
+  showToast("Sample loaded. Click Generate to call the AI API.");
 });
 
 clearResume.addEventListener("click", () => {
@@ -725,6 +720,12 @@ clearLinkedin.addEventListener("click", () => {
   updateCounts();
 });
 
+clearGithub.addEventListener("click", () => {
+  githubUrlInput.value = "";
+  githubTextInput.value = "";
+  updateCounts();
+});
+
 clearJob.addEventListener("click", () => {
   jobUrlInput.value = "";
   jobTextInput.value = "";
@@ -740,20 +741,6 @@ copyTailoredButton.addEventListener("click", async () => {
 });
 
 updateCounts();
+setActivePage(getRequestedPage());
+initializeSentry();
 initializeAuth();
-
-async function copyTextArea(target, successMessage) {
-  if (!target.value.trim()) {
-    showToast("Generate output first.");
-    return;
-  }
-  try {
-    await navigator.clipboard.writeText(target.value);
-    showToast(successMessage);
-  } catch {
-    target.focus();
-    target.select();
-    document.execCommand("copy");
-    showToast("Text selected and copied.");
-  }
-}
