@@ -64,18 +64,35 @@ app.use(
   }),
 );
 app.use(
-  cors({
-    origin(origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-        return;
-      }
-      callback(new Error("Origin is not allowed by CORS."));
-    },
-    credentials: false,
+  cors((req, callback) => {
+    callback(null, {
+      origin(origin, originCallback) {
+        if (!origin || isAllowedCorsOrigin(origin, req)) {
+          originCallback(null, true);
+          return;
+        }
+        originCallback(new Error("Origin is not allowed by CORS."));
+      },
+      credentials: false,
+    });
   }),
 );
 app.use(express.json({ limit: process.env.JSON_BODY_LIMIT || "256kb" }));
+
+function isAllowedCorsOrigin(origin, req) {
+  if (allowedOrigins.includes(origin) || origin === publicOrigin) return true;
+  try {
+    const originUrl = new URL(origin);
+    const requestHost = req.get("host");
+    if (!requestHost || originUrl.host !== requestHost) return false;
+    if (isProduction) {
+      return originUrl.protocol === "https:";
+    }
+    return originUrl.protocol === `${req.protocol}:`;
+  } catch {
+    return false;
+  }
+}
 
 const apiLimiter = rateLimit({
   windowMs: 60_000,
