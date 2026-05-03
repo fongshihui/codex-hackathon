@@ -1856,7 +1856,12 @@ function startDemo() {
 
 async function initializeAuth() {
   if (!isSupabaseConfigured) {
-    setAuthMessage("Configure Supabase in config.local.js to enable sign in.", true);
+    setAuthMessage(
+      window.location.hostname.endsWith(".onrender.com")
+        ? "Configure SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY in Render environment variables."
+        : "Configure Supabase in config.local.js to enable sign in.",
+      true,
+    );
     setAuthLoading(false);
     return;
   }
