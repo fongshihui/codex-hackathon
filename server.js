@@ -8,7 +8,7 @@ import multer from "multer";
 import pinoHttp from "pino-http";
 import { z } from "zod";
 import { requireSupabaseAuth } from "./src/auth.js";
-import { generateAiCandidate } from "./src/gemini.js";
+import { generateAiCandidate, generatePracticeQuestions } from "./src/gemini.js";
 import { extractGithubProjects, isGithubUrl } from "./src/github.js";
 import { extractResumeText } from "./src/resume-parser.js";
 import {
@@ -117,24 +117,32 @@ const urlField = z
   .default("")
   .refine((value) => !value || /^https?:\/\/[^\s]+$/i.test(value), "URL must start with http:// or https://.");
 
-const analysisSchema = z
-  .object({
-    resumeText: textField,
-    notesText: textField,
-    linkedinText: textField,
-    githubText: textField,
-    jobText: textField,
-    linkedinUrl: urlField,
-    githubUrl: urlField,
-    jobUrl: urlField,
-  })
-  .refine(
-    (input) => input.resumeText || input.notesText || input.linkedinText || input.githubText || input.jobText,
-    "Add resume, LinkedIn text, GitHub project text, notes, or a job description first.",
-  );
+const contextSchema = z.object({
+  resumeText: textField,
+  notesText: textField,
+  linkedinText: textField,
+  githubText: textField,
+  jobText: textField,
+  linkedinUrl: urlField,
+  githubUrl: urlField,
+  jobUrl: urlField,
+});
+
+const analysisSchema = contextSchema.refine(
+  (input) => input.resumeText || input.notesText || input.linkedinText || input.githubText || input.jobText,
+  "Add resume, LinkedIn text, GitHub project text, notes, or a job description first.",
+);
 
 const aiSchema = z.object({
   context: analysisSchema,
+});
+
+const practiceSchema = z.object({
+  context: contextSchema.optional().default({}),
+  mode: z.enum(["dsa", "internals"]),
+  language: z.enum(["C++", "Python", "JavaScript", "TypeScript", "Java", "Go"]),
+  topic: z.string().trim().min(1).max(80),
+  difficulty: z.string().trim().min(1).max(40),
 });
 
 const linkedInExtractSchema = z.object({
@@ -189,6 +197,23 @@ app.post("/api/generate", apiLimiter, requireSupabaseAuth({ supabaseUrl }), asyn
     }
 
     const result = await generateAiCandidate(parsed.data);
+    return res.status(200).json(result);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+app.post("/api/practice/generate", apiLimiter, requireSupabaseAuth({ supabaseUrl }), async (req, res, next) => {
+  try {
+    const parsed = practiceSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({
+        error: "Invalid practice generation request.",
+        details: parsed.error.issues.map((issue) => issue.message),
+      });
+    }
+
+    const result = await generatePracticeQuestions(parsed.data);
     return res.status(200).json(result);
   } catch (error) {
     return next(error);

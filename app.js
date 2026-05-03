@@ -79,8 +79,11 @@ const resumeChangeList = document.querySelector("#resumeChangeList");
 const lcList = document.querySelector("#lcList");
 const systemList = document.querySelector("#systemList");
 const prepMemoryList = document.querySelector("#prepMemoryList");
+const dsaModeSelect = document.querySelector("#dsaModeSelect");
 const dsaLanguageSelect = document.querySelector("#dsaLanguageSelect");
+const dsaTopicLabel = document.querySelector("#dsaTopicLabel");
 const dsaTopicSelect = document.querySelector("#dsaTopicSelect");
+const dsaDifficultyLabel = document.querySelector("#dsaDifficultyLabel");
 const dsaDifficultySelect = document.querySelector("#dsaDifficultySelect");
 const generateDsaButton = document.querySelector("#generateDsaButton");
 const saveDsaQuestionsButton = document.querySelector("#saveDsaQuestionsButton");
@@ -124,127 +127,6 @@ const maxPrepMemoryItems = 12;
 const maxQuestionBankItems = 80;
 const maxBehavioralStories = 12;
 const appStateTable = "app_state";
-const dsaQuestionBank = {
-  arrays: {
-    easy: [
-      ["Rotate Window Sum", "Given an array and window size k, return every contiguous window sum."],
-      ["Merge Sorted Sensor Readings", "Merge two sorted arrays of timestamps without using extra sorting."],
-      ["First Bad Prefix", "Return the first index where prefix sum exceeds a threshold."],
-    ],
-    medium: [
-      ["Minimum Subarray to Remove", "Remove the shortest subarray so the remaining sum is divisible by k."],
-      ["Product Except Self With Nulls", "Return product except self while handling zero values explicitly."],
-      ["Container Capacity Audit", "Find two boundaries that maximize retained capacity."],
-    ],
-    hard: [
-      ["Median of Two Streams", "Find the median after combining two sorted arrays in logarithmic time."],
-      ["Trapping Rain Across Regions", "Compute total trapped water from an elevation array."],
-      ["Shortest Unsorted Repair Window", "Find the minimal window that makes the array sorted after fixing it."],
-    ],
-  },
-  strings: {
-    easy: [
-      ["Normalize Candidate Handle", "Validate whether two profile handles normalize to the same canonical form."],
-      ["Valid Anagram Signals", "Check whether two strings contain the same characters."],
-      ["Compress Repeated Events", "Run-length encode repeated event labels."],
-    ],
-    medium: [
-      ["Longest Unique Session", "Find the longest substring without repeated characters."],
-      ["Grouped Skill Anagrams", "Group skill strings that are anagrams after normalization."],
-      ["Minimum Replacement Window", "Find the shortest substring that contains all required characters."],
-    ],
-    hard: [
-      ["Wildcard Route Matcher", "Match a path string against ? and * wildcards."],
-      ["Edit Distance Review", "Compute minimum edits to transform one string into another."],
-      ["Concatenated Token Search", "Find all indexes where a concatenation of given words appears."],
-    ],
-  },
-  hashmaps: {
-    easy: [
-      ["Two Sum Follow-Up", "Return indexes of two values that add to a target."],
-      ["Duplicate Application IDs", "Detect whether any application ID appears twice."],
-      ["Most Common Skill", "Return the most frequent skill from a list."],
-    ],
-    medium: [
-      ["Top K Frequent Signals", "Return the k most frequent values from an event stream."],
-      ["LRU Cache Simulator", "Implement get and put for a fixed-capacity LRU cache."],
-      ["Subarray Sum Equals K", "Count contiguous subarrays that sum to k."],
-    ],
-    hard: [
-      ["All O One Counter", "Design a counter with O(1) inc, dec, min, and max."],
-      ["Minimum Window Coverage", "Find the minimum text window containing all target tokens."],
-      ["Longest Consecutive Range", "Find the longest consecutive integer sequence in O(n)."],
-    ],
-  },
-  trees: {
-    easy: [
-      ["Same Tree Review", "Check whether two binary trees are structurally identical."],
-      ["Max Tree Depth", "Compute maximum depth of a binary tree."],
-      ["Invert Tree", "Mirror a binary tree."],
-    ],
-    medium: [
-      ["Level Order Interview", "Return tree nodes level by level."],
-      ["Validate BST", "Check whether a binary tree is a valid search tree."],
-      ["Lowest Common Manager", "Find lowest common ancestor of two nodes."],
-    ],
-    hard: [
-      ["Serialize Org Tree", "Serialize and deserialize a binary tree."],
-      ["Binary Tree Maximum Path", "Find the maximum path sum between any two nodes."],
-      ["Recover Corrupted BST", "Fix a BST where two nodes were swapped."],
-    ],
-  },
-  graphs: {
-    easy: [
-      ["Find Connected Teams", "Count connected components in an undirected graph."],
-      ["Valid Path Check", "Determine whether a path exists between two nodes."],
-      ["Graph Degree Summary", "Return the degree of every node."],
-    ],
-    medium: [
-      ["Number of Islands", "Count connected land regions in a grid."],
-      ["Course Schedule", "Detect whether all courses can be completed."],
-      ["Shortest Path in Grid", "Find shortest path length with BFS."],
-    ],
-    hard: [
-      ["Alien Dictionary", "Infer character order from sorted words."],
-      ["Network Delay Time", "Compute when all nodes receive a signal."],
-      ["Minimum Cost to Connect", "Build an MST over weighted edges."],
-    ],
-  },
-  dp: {
-    easy: [
-      ["Climbing Stairs", "Count ways to climb n steps."],
-      ["House Robber Lite", "Maximize non-adjacent values."],
-      ["Maximum Subarray", "Find the maximum sum contiguous subarray."],
-    ],
-    medium: [
-      ["Coin Change", "Return the fewest coins needed for a target amount."],
-      ["Longest Increasing Subsequence", "Find the length of the longest increasing subsequence."],
-      ["Unique Paths With Blocks", "Count grid paths while avoiding blocked cells."],
-    ],
-    hard: [
-      ["Edit Distance", "Compute minimum insert, delete, and replace operations."],
-      ["Burst Balloons", "Maximize score from removing values in the best order."],
-      ["Regular Expression DP", "Match strings with . and * operators."],
-    ],
-  },
-  heaps: {
-    easy: [
-      ["Kth Largest Stream", "Maintain the kth largest value after each insertion."],
-      ["Last Stone Weight", "Repeatedly smash the two largest values."],
-      ["Smallest Meeting Room", "Find the earliest available room by end time."],
-    ],
-    medium: [
-      ["Merge K Sorted Lists", "Merge k sorted linked lists efficiently."],
-      ["Task Scheduler", "Schedule tasks with cooldown constraints."],
-      ["K Closest Points", "Return the k closest points to the origin."],
-    ],
-    hard: [
-      ["Median Finder", "Support add number and median query from a stream."],
-      ["IPO Capital Planner", "Choose projects to maximize capital."],
-      ["Smallest Range From Lists", "Find the smallest range covering k sorted lists."],
-    ],
-  },
-};
 const keywordStopWords = new Set([
   "about",
   "above",
@@ -1208,40 +1090,93 @@ function saveGeneratedQuestions() {
   showToast("Generated questions saved.");
 }
 
-function generateDsaPracticeRound() {
+async function generateDsaPracticeRound() {
+  const mode = dsaModeSelect.value;
   const language = dsaLanguageSelect.value;
-  const topic = dsaTopicSelect.value;
-  const difficulty = dsaDifficultySelect.value;
-  const bank = dsaQuestionBank[topic]?.[difficulty] || dsaQuestionBank.arrays.medium;
-  dsaPracticeQuestions = bank.map(([title, prompt], index) =>
-    buildDsaPracticeQuestion({
-      title,
-      prompt,
-      language,
-      topic,
-      difficulty,
-      index,
-    }),
-  );
-  renderDsaPractice();
-  queueSaveAppState(0);
-  showToast(`${language} DSA round generated.`);
+  const topic = mode === "internals" ? "language internals" : topicLabel(dsaTopicSelect.value);
+  const difficulty = mode === "internals" ? "concept" : dsaDifficultySelect.value;
+
+  if (!requireLiveSession("generate Gemini practice questions")) return;
+
+  generateDsaButton.disabled = true;
+  generateDsaButton.dataset.label ||= generateDsaButton.textContent.trim();
+  generateDsaButton.textContent = "Generating...";
+
+  try {
+    const apiBaseUrl = getApiBaseUrl();
+    const response = await fetch(`${apiBaseUrl}/api/practice/generate`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...authorizationHeaders(),
+      },
+      body: JSON.stringify({
+        context: getContext(),
+        mode,
+        language,
+        topic,
+        difficulty,
+      }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(payload.error || payload.details?.[0] || "Practice generation failed.");
+    }
+    dsaPracticeQuestions = sanitizeDsaPractice(payload.questions);
+    renderDsaPractice();
+    queueSaveAppState(0);
+    showToast(`${language} practice generated with Gemini.`);
+  } catch (error) {
+    reportError(error, { feature: "practice-generation", mode, language, topic, difficulty });
+    showToast(error.message || "Practice generation failed.");
+  } finally {
+    generateDsaButton.disabled = false;
+    generateDsaButton.textContent = generateDsaButton.dataset.label;
+  }
 }
 
-function buildDsaPracticeQuestion({ title, prompt, language, topic, difficulty, index }) {
+function normalizePracticeQuestion(item, index) {
+  const language = cleanString(item.language) || dsaLanguageSelect.value;
+  const mode = cleanString(item.mode) || dsaModeSelect.value;
+  const topic = cleanString(item.topic) || (mode === "internals" ? "language internals" : topicLabel(dsaTopicSelect.value));
+  const difficulty = cleanString(item.difficulty) || (mode === "internals" ? "concept" : dsaDifficultySelect.value);
+  const title = cleanString(item.title) || `Practice question ${index + 1}`;
   return {
-    id: `dsa-${Date.now()}-${index}`,
-    type: "coding",
+    id: cleanString(item.id) || `practice-${Date.now()}-${index}`,
+    type: mode === "internals" ? "language" : "coding",
     language,
     topic,
     difficulty,
     title,
-    question: `${title} - ${topicLabel(topic)} - ${difficultyLabel(difficulty)} - Language: ${language}`,
-    prompt,
-    starter: starterCodeFor(language, title),
-    hints: hintsFor(topic, difficulty),
-    complexity: complexityFor(topic),
+    question: cleanString(item.question) || `${title} - ${topic} - Language: ${language}`,
+    prompt: cleanString(item.prompt),
+    starter: cleanString(item.starter),
+    hints: cleanStringArray(item.hints),
+    complexity: cleanString(item.complexity),
   };
+}
+
+function sanitizeDsaPractice(items) {
+  if (!Array.isArray(items)) return [];
+  return items
+    .filter((item) => item && (item.question || item.title || item.prompt))
+    .map(normalizePracticeQuestion)
+    .slice(0, 6);
+}
+
+function saveDsaQuestions() {
+  if (!dsaPracticeQuestions.length) {
+    showToast("Generate a Gemini practice round first.");
+    return;
+  }
+  addQuestionsToBank(
+    dsaPracticeQuestions.map((item) => ({
+      type: item.type === "language" ? "behavioral" : "coding",
+      question: item.question,
+    })),
+    getContext(),
+  );
+  showToast("Gemini practice questions saved.");
 }
 
 function renderDsaPractice() {
@@ -1263,7 +1198,10 @@ function renderDsaPractice() {
     const title = document.createElement("h4");
     title.textContent = item.title;
     const meta = document.createElement("span");
-    meta.textContent = `${item.language} / ${topicLabel(item.topic)} / ${difficultyLabel(item.difficulty)}`;
+    meta.textContent =
+      item.type === "language"
+        ? `${item.language} / Internals`
+        : `${item.language} / ${topicLabel(item.topic)} / ${difficultyLabel(item.difficulty)}`;
     header.append(title, meta);
 
     const prompt = document.createElement("p");
@@ -1280,25 +1218,20 @@ function renderDsaPractice() {
     codeInner.textContent = item.starter;
     code.append(codeInner);
     const complexity = document.createElement("small");
-    complexity.textContent = `Target complexity: ${item.complexity}`;
+    complexity.textContent = item.type === "language" ? item.complexity : `Target complexity: ${item.complexity}`;
     card.append(header, prompt, hints, code, complexity);
     dsaPracticeList.append(card);
   }
 }
 
-function saveDsaQuestions() {
-  if (!dsaPracticeQuestions.length) {
-    showToast("Generate a DSA round first.");
-    return;
+function updateDsaModeControls({ clear = true } = {}) {
+  const isInternals = dsaModeSelect.value === "internals";
+  dsaTopicLabel.classList.toggle("is-hidden", isInternals);
+  dsaDifficultyLabel.classList.toggle("is-hidden", isInternals);
+  if (clear) {
+    dsaPracticeQuestions = [];
+    renderDsaPractice();
   }
-  addQuestionsToBank(
-    dsaPracticeQuestions.map((item) => ({
-      type: "coding",
-      question: item.question,
-    })),
-    getContext(),
-  );
-  showToast("Language-specific DSA questions saved.");
 }
 
 function topicLabel(topic) {
@@ -1315,105 +1248,8 @@ function topicLabel(topic) {
 }
 
 function difficultyLabel(difficulty) {
+  if (difficulty === "concept") return "Concept";
   return difficulty.charAt(0).toUpperCase() + difficulty.slice(1);
-}
-
-function hintsFor(topic, difficulty) {
-  const base = {
-    arrays: ["Define the invariant before coding.", "Watch index bounds and empty input."],
-    strings: ["Normalize input first.", "Use two pointers or frequency counts where possible."],
-    hashmaps: ["Choose the key carefully.", "Update counts before checking edge cases."],
-    trees: ["State traversal order clearly.", "Handle null children before recursion."],
-    graphs: ["Clarify directed vs undirected.", "Track visited state explicitly."],
-    dp: ["Define state and transition before code.", "Start with base cases."],
-    heaps: ["State min-heap vs max-heap choice.", "Keep heap size bounded when possible."],
-  }[topic] || ["Explain approach before coding.", "Call out edge cases."];
-  return difficulty === "hard" ? [...base, "Discuss the brute force approach and why it fails."] : base;
-}
-
-function complexityFor(topic) {
-  const targets = {
-    arrays: "O(n) or O(n log n), O(1) to O(n) space",
-    strings: "O(n), O(k) space for character/token counts",
-    hashmaps: "O(n) average time, O(n) space",
-    trees: "O(n) time, O(h) recursion space",
-    graphs: "O(V + E) time, O(V) space",
-    dp: "O(states * transitions), optimized space if possible",
-    heaps: "O(n log k) or O(n log n), depending on heap size",
-  };
-  return targets[topic] || "State time and space before coding";
-}
-
-function starterCodeFor(language, title) {
-  const functionName = slugify(title).replace(/-([a-z])/g, (_match, letter) => letter.toUpperCase()) || "solve";
-  const snippets = {
-    "C++": `#include <bits/stdc++.h>
-using namespace std;
-
-class Solution {
-public:
-    // Explain your approach before writing code.
-    vector<int> ${functionName}(vector<int>& nums) {
-        // TODO: implement
-        return {};
-    }
-};`,
-    Python: `from typing import List
-
-class Solution:
-    def ${functionName}(self, nums: List[int]) -> List[int]:
-        # Explain your approach before writing code.
-        # TODO: implement
-        return []`,
-    JavaScript: `function ${functionName}(nums) {
-  // Explain your approach before writing code.
-  // TODO: implement
-  return [];
-}`,
-    TypeScript: `function ${functionName}(nums: number[]): number[] {
-  // Explain your approach before writing code.
-  // TODO: implement
-  return [];
-}`,
-    Java: `import java.util.*;
-
-class Solution {
-    public int[] ${functionName}(int[] nums) {
-        // Explain your approach before writing code.
-        // TODO: implement
-        return new int[0];
-    }
-}`,
-    Go: `package main
-
-func ${functionName}(nums []int) []int {
-    // Explain your approach before writing code.
-    // TODO: implement
-    return []int{}
-}`,
-  };
-  return snippets[language] || snippets.JavaScript;
-}
-
-function sanitizeDsaPractice(items) {
-  return Array.isArray(items)
-    ? items
-        .filter((item) => item && item.id && item.question)
-        .map((item) => ({
-          id: cleanString(item.id),
-          type: "coding",
-          language: cleanString(item.language) || "C++",
-          topic: cleanString(item.topic) || "arrays",
-          difficulty: cleanString(item.difficulty) || "medium",
-          title: cleanString(item.title),
-          question: cleanString(item.question),
-          prompt: cleanString(item.prompt),
-          starter: cleanString(item.starter),
-          hints: cleanStringArray(item.hints),
-          complexity: cleanString(item.complexity),
-        }))
-        .slice(0, 6)
-    : [];
 }
 
 function addManualQuestion() {
@@ -2564,6 +2400,7 @@ copyPackButton.addEventListener("click", copyPrepPack);
 downloadPackButton.addEventListener("click", downloadPrepPack);
 generateDsaButton.addEventListener("click", generateDsaPracticeRound);
 saveDsaQuestionsButton.addEventListener("click", saveDsaQuestions);
+dsaModeSelect.addEventListener("change", updateDsaModeControls);
 saveGeneratedQuestionsButton.addEventListener("click", saveGeneratedQuestions);
 addQuestionButton.addEventListener("click", addManualQuestion);
 manualQuestionInput.addEventListener("keydown", (event) => {
@@ -2582,5 +2419,6 @@ renderApplications();
 renderQuestionBank();
 renderBehavioralStories();
 renderDsaPractice();
+updateDsaModeControls({ clear: false });
 initializeSentry();
 initializeAuth();

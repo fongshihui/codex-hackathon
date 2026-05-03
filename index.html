@@ -512,6 +512,13 @@
               </div>
               <div class="dsa-controls">
                 <label>
+                  Mode
+                  <select id="dsaModeSelect">
+                    <option value="dsa">DSA problems</option>
+                    <option value="internals">Language internals</option>
+                  </select>
+                </label>
+                <label>
                   Language
                   <select id="dsaLanguageSelect">
                     <option value="C++">C++</option>
@@ -522,7 +529,7 @@
                     <option value="Go">Go</option>
                   </select>
                 </label>
-                <label>
+                <label id="dsaTopicLabel">
                   Topic
                   <select id="dsaTopicSelect">
                     <option value="arrays">Arrays</option>
@@ -534,7 +541,7 @@
                     <option value="heaps">Heaps</option>
                   </select>
                 </label>
-                <label>
+                <label id="dsaDifficultyLabel">
                   Difficulty
                   <select id="dsaDifficultySelect">
                     <option value="medium">Medium</option>

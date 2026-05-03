@@ -12,6 +12,21 @@ const requiredKeys = [
 ];
 
 export async function generateAiCandidate({ context }) {
+  return normalizeOutput(parseJsonOutput(await requestGemini(buildPrompt(context), 0.35)));
+}
+
+export async function generatePracticeQuestions({ context, mode, language, topic, difficulty }) {
+  const payload = parseJsonOutput(await requestGemini(buildPracticePrompt({ context, mode, language, topic, difficulty }), 0.45));
+  const questions = Array.isArray(payload.questions) ? payload.questions : [];
+  return {
+    questions: questions
+      .map((item, index) => normalizePracticeQuestion(item, { mode, language, topic, difficulty, index }))
+      .filter((item) => item.question || item.title || item.prompt)
+      .slice(0, 6),
+  };
+}
+
+async function requestGemini(prompt, temperature) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey || apiKey === "YOUR_GEMINI_API_KEY") {
     const error = new Error("GEMINI_API_KEY is missing. Add it to .env and restart the server.");
@@ -28,9 +43,9 @@ export async function generateAiCandidate({ context }) {
       "x-goog-api-key": apiKey,
     },
     body: JSON.stringify({
-      contents: [{ parts: [{ text: buildPrompt(context) }] }],
+      contents: [{ parts: [{ text: prompt }] }],
       generationConfig: {
-        temperature: 0.35,
+        temperature,
         responseMimeType: "application/json",
       },
     }),
@@ -44,7 +59,7 @@ export async function generateAiCandidate({ context }) {
   }
 
   const text = payload.candidates?.[0]?.content?.parts?.map((part) => part.text || "").join("") || "{}";
-  return normalizeOutput(parseJsonOutput(text));
+  return text;
 }
 
 function buildPrompt(context) {
@@ -99,6 +114,60 @@ ${limitText(context.jobText)}
 `.trim();
 }
 
+function buildPracticePrompt({ context, mode, language, topic, difficulty }) {
+  const isInternals = mode === "internals";
+  return `
+You are a senior technical interviewer.
+Return only valid JSON shaped like:
+{
+  "questions": [
+    {
+      "title": "short title",
+      "question": "single-line interview question",
+      "prompt": "candidate-facing prompt",
+      "hints": ["hint 1", "hint 2"],
+      "starter": "starter code or answer framework",
+      "complexity": "target complexity or evaluation focus"
+    }
+  ]
+}
+
+Rules:
+- Generate exactly 4 questions.
+- Language must be ${language}.
+- Mode is ${mode}.
+- Topic is ${topic}.
+- Difficulty is ${difficulty}.
+- Do not use Markdown fences.
+- Do not invent job or resume facts.
+- Keep titles short.
+- Keep hints concise.
+- Include practical follow-up depth expected in real interviews.
+${
+  isInternals
+    ? `- Generate common ${language} internals/concepts questions, not DSA.
+- Cover runtime/compiler behavior, memory/concurrency where relevant, common bugs, and tradeoffs.
+- starter must be an answer framework with 4-5 numbered plain-text points, not code.`
+    : `- Generate DSA/coding questions tailored to ${language}.
+- Include a language-specific starter code template in starter.
+- complexity must state target time and space complexity.`
+}
+
+Candidate/job context for tailoring only:
+Resume:
+${limitText(context?.resumeText, 3000)}
+
+GitHub:
+${limitText(context?.githubText, 2500)}
+
+Notes:
+${limitText(context?.notesText, 2500)}
+
+Job:
+${limitText(context?.jobText, 3000)}
+`.trim();
+}
+
 function limitText(value, maxLength = 12000) {
   const configuredLimit = Number(process.env.GEMINI_INPUT_MAX_CHARS || maxLength);
   const effectiveLimit = Number.isFinite(configuredLimit) && configuredLimit > 0 ? configuredLimit : maxLength;
@@ -132,6 +201,23 @@ function normalizeOutput(payload) {
     systemDesignPrompts: cleanArray(payload.systemDesignPrompts),
     candidateBrief: cleanString(payload.candidateBrief),
     tailoredResume: cleanString(payload.tailoredResume),
+  };
+}
+
+function normalizePracticeQuestion(item, defaults) {
+  return {
+    id: `practice-${Date.now()}-${defaults.index}`,
+    type: defaults.mode === "internals" ? "language" : "coding",
+    mode: defaults.mode,
+    language: cleanString(item.language) || defaults.language,
+    topic: cleanString(item.topic) || defaults.topic,
+    difficulty: cleanString(item.difficulty) || defaults.difficulty,
+    title: cleanString(item.title),
+    question: cleanString(item.question),
+    prompt: cleanString(item.prompt),
+    hints: cleanArray(item.hints).slice(0, 4),
+    starter: cleanString(item.starter),
+    complexity: cleanString(item.complexity),
   };
 }
 
